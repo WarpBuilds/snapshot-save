@@ -15,15 +15,9 @@
     "skipLibCheck": true,
     "newLine": "lf",
     "paths": {
-      "*": [
-        "node_modules/*"
-      ]
+      "*": ["node_modules/*"]
     }
+    // "allowImportingTsExtensions": true,
   },
-  "exclude": [
-    "./dist",
-    "./node_modules",
-    "./__tests__",
-    "./coverage"
-  ]
+  "exclude": ["./dist", "./node_modules", "./__tests__", "./coverage"]
 }

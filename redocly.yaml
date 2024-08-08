@@ -5,8 +5,8 @@ apis:
       filter-in:
         property: tags
         value:
-          - "v1 runner_images"
-          - "v1 runner_image_versions"
+          - 'v1 runner_images'
+          - 'v1 runner_image_versions'
   # filterout:
   #   root: ./docs/swagger.yaml
   #   decorators:

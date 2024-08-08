@@ -590,6 +590,8 @@ definitions:
         type: string
       settings:
         $ref: '#/definitions/commons.RunnerImageSettings'
+      stack_id:
+        type: string
       type:
         type: string
       warpbuild_snapshot_image:
@@ -666,6 +668,8 @@ definitions:
         type: string
       settings:
         $ref: '#/definitions/commons.RunnerImageSettings'
+      stack_id:
+        type: string
       status:
         enum:
           - creating
@@ -784,7 +788,9 @@ definitions:
       created_at:
         type: string
       external_id:
-        description: ExternalID is the ID of the runner image version in the external system.
+        description:
+          ExternalID is the ID of the runner image version in the external
+          system.
         type: string
       id:
         type: string
@@ -797,6 +803,8 @@ definitions:
       runner_image_id:
         type: string
       runner_image_pull_secret_id:
+        type: string
+      stack_id:
         type: string
       status:
         type: string
@@ -826,7 +834,8 @@ definitions:
       snapshot_id:
         type: string
       snapshot_size:
-        description: SnapshotSize is the size of the snapshot in human readable format.
+        description:
+          SnapshotSize is the size of the snapshot in human readable format.
         type: string
       volume_id:
         type: string
@@ -883,11 +892,18 @@ definitions:
     type: object
   commons.WarpbuildSnapshotImage:
     properties:
-      creator_job_id:
-        type: string
       creator_runner_instance_id:
+        description: |-
+          CreatorRunnerInstanceID is the ID of the runner instance that created the snapshot.
+          This is populated via the auth token.
+
+          +OutputOnly
         type: string
       provider:
+        description: |-
+          Provider is the cloud provider of the snapshot.
+
+          +OutputOnly
         type: string
       snapshot_id:
         description: |-
@@ -896,8 +912,24 @@ definitions:
           +OutputOnly
         type: string
       stack_id:
+        description: |-
+          StackID is the ID of the stack.
+
+          +OutputOnly
         type: string
-      volume_id:
+      vcs_organization_name:
+        description: |-
+          VCSOrganizationName is the name of the VCS organization.
+          This is populated via the auth token.
+
+          +OutputOnly
+        type: string
+      vcs_repository_name:
+        description: |-
+          VCSRepositoryName is the name of the VCS repository.
+          This is populated via the auth token.
+
+          +OutputOnly
         type: string
     type: object
   types.GenericSuccessMessage:
