@@ -1,3 +1,4 @@
+import { arch, platform } from 'os'
 import { Logger } from './logger'
 import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
 
@@ -21,6 +22,28 @@ export class Snapshotter {
     this.logger = this.so.log
   }
 
+  getArch(): string {
+    // figure out the arch of the current system
+    if (arch() === 'arm64') {
+      return 'arm64'
+    }
+    if (arch() === 'x64') {
+      return 'x64'
+    }
+    return ''
+  }
+
+  getOS(): string {
+    // get the OS of the current system
+    if (platform() === 'linux') {
+      return 'ubuntu'
+    }
+    if (platform() === 'darwin') {
+      return 'mac'
+    }
+    return ''
+  }
+
   async saveSnapshot(opts: saveSnapshotOptions): Promise<void> {
     const wo: WarpbuildOptions = {
       token: this.snapshotterOptions.warpbuildToken,
@@ -33,6 +56,11 @@ export class Snapshotter {
     this.logger.info(
       `Checking if snapshot alias '${opts.runnerImageAlias}' exists`
     )
+
+    const currOs = this.getOS()
+    const currArch = this.getArch()
+    this.logger.info(`OS: ${currOs}`)
+    this.logger.info(`Arch: ${currArch}`)
 
     const requestOptions = {
       headers: {
@@ -79,6 +107,8 @@ export class Snapshotter {
             body: {
               type: 'warpbuild_snapshot_image',
               alias: opts.runnerImageAlias,
+              arch: currArch,
+              os: currOs,
               warpbuild_snapshot_image: {
                 snapshot_id: ''
               }

@@ -25093,6 +25093,7 @@ exports.Log = Log;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Snapshotter = void 0;
+const os_1 = __nccwpck_require__(2037);
 const warpbuild_client_1 = __nccwpck_require__(1334);
 class Snapshotter {
     so;
@@ -25103,6 +25104,26 @@ class Snapshotter {
         this.snapshotterOptions = this.so;
         this.logger = this.so.log;
     }
+    getArch() {
+        // figure out the arch of the current system
+        if ((0, os_1.arch)() === 'arm64') {
+            return 'arm64';
+        }
+        if ((0, os_1.arch)() === 'x64') {
+            return 'x64';
+        }
+        return '';
+    }
+    getOS() {
+        // get the OS of the current system
+        if ((0, os_1.platform)() === 'linux') {
+            return 'ubuntu';
+        }
+        if ((0, os_1.platform)() === 'darwin') {
+            return 'mac';
+        }
+        return '';
+    }
     async saveSnapshot(opts) {
         const wo = {
             token: this.snapshotterOptions.warpbuildToken,
@@ -25111,6 +25132,10 @@ class Snapshotter {
         };
         const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
         this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
+        const currOs = this.getOS();
+        const currArch = this.getArch();
+        this.logger.info(`OS: ${currOs}`);
+        this.logger.info(`Arch: ${currArch}`);
         const requestOptions = {
             headers: {
                 Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
@@ -25142,6 +25167,8 @@ class Snapshotter {
                 body: {
                     type: 'warpbuild_snapshot_image',
                     alias: opts.runnerImageAlias,
+                    arch: currArch,
+                    os: currOs,
                     warpbuild_snapshot_image: {
                         snapshot_id: ''
                     }
