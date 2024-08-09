@@ -36,42 +36,52 @@ export class Snapshotter {
 
     const requestOptions = {
       headers: {
-        'Authorization': `Bearer ${this.snapshotterOptions.warpbuildToken}`
+        Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
       }
     }
-    const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
-      alias: opts.runnerImageAlias
-    }, requestOptions)
+    const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages(
+      {
+        alias: opts.runnerImageAlias
+      },
+      requestOptions
+    )
     let runnerImageID: string
     if (images.runner_images?.length || 0 > 0) {
       this.logger.info(
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${opts.runnerImageAlias
+        `Updating existing snapshot alias '${
+          opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
 
-      await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage({
-        id: runnerImageID,
-        body: {
-          warpbuild_snapshot_image: {
-            snapshot_id: ''
-          }
-        }
-      }, requestOptions)
-    } else {
-      this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`)
-      const createRunnerImageResponse =
-        await warpbuildClient.v1RunnerImagesAPI.createRunnerImage({
+      await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage(
+        {
+          id: runnerImageID,
           body: {
-            alias: opts.runnerImageAlias,
             warpbuild_snapshot_image: {
               snapshot_id: ''
             }
           }
-        }, requestOptions)
+        },
+        requestOptions
+      )
+    } else {
+      this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`)
+      const createRunnerImageResponse =
+        await warpbuildClient.v1RunnerImagesAPI.createRunnerImage(
+          {
+            body: {
+              alias: opts.runnerImageAlias,
+              warpbuild_snapshot_image: {
+                snapshot_id: ''
+              }
+            }
+          },
+          requestOptions
+        )
 
       runnerImageID = createRunnerImageResponse.id
     }
@@ -92,7 +102,8 @@ export class Snapshotter {
         await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions(
           {
             runner_image_id: runnerImageID
-          }, requestOptions
+          },
+          requestOptions
         )
       const latestRunnerImageVersion =
         runnerImageVersions.runner_image_versions?.[0]

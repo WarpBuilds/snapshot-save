@@ -1,6 +1,6 @@
-name: "WarpSnapshot"
-description: "Snapshot your volume and re-use it for faster builds"
-author: "WarpBuild"
+name: 'WarpSnapshot'
+description: 'Snapshot your volume and re-use it for faster builds'
+author: 'WarpBuild'
 
 # # Add your action's branding here. This will appear on the GitHub Marketplace.
 # branding:
@@ -14,20 +14,20 @@ inputs:
   #   required: true
   #   default: "1000"
   warpbuild-base-url:
-    description: "Warpbuild Server base URL"
+    description: 'Warpbuild Server base URL'
     required: false
-    default: ""
+    default: ''
   wait-timeout-minutes:
-    description: "Timeout in minutes to wait for the snapshot to be ready"
+    description: 'Timeout in minutes to wait for the snapshot to be ready'
     required: false
-    default: "30"
+    default: '30'
   alias:
-    description: "Alias for the snapshot"
+    description: 'Alias for the snapshot'
     required: true
   fail-on-error:
-    description: "Fail the action if an error occurs"
+    description: 'Fail the action if an error occurs'
     required: false
-    default: "true"
+    default: 'true'
 
 # Define your outputs here.
 outputs: {}

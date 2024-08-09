@@ -24990,13 +24990,13 @@ async function run() {
     catch (error) {
         if (failOnError) {
             // Fail the workflow run if an error occurs
-            if (error instanceof Error)
-                core.setFailed(error.message);
+            throw error;
+            // if (error instanceof Error) core.setFailed(error.message)
         }
         else {
             // Log the error message
-            if (error instanceof Error)
-                core.warning(error.message);
+            throw error;
+            // if (error instanceof Error) core.warning(error.message)
         }
     }
 }
@@ -25111,9 +25111,14 @@ class Snapshotter {
         };
         const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
         this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
+        const requestOptions = {
+            headers: {
+                Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
+            }
+        };
         const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
             alias: opts.runnerImageAlias
-        });
+        }, requestOptions);
         let runnerImageID;
         if (images.runner_images?.length || 0 > 0) {
             this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
@@ -25126,7 +25131,7 @@ class Snapshotter {
                         snapshot_id: ''
                     }
                 }
-            });
+            }, requestOptions);
         }
         else {
             this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`);
@@ -25137,7 +25142,7 @@ class Snapshotter {
                         snapshot_id: ''
                     }
                 }
-            });
+            }, requestOptions);
             runnerImageID = createRunnerImageResponse.id;
         }
         this.logger.info('Waiting for snapshot to be created');
@@ -25152,7 +25157,7 @@ class Snapshotter {
             // fetch all the runner image version for this runner image
             const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
                 runner_image_id: runnerImageID
-            });
+            }, requestOptions);
             const latestRunnerImageVersion = runnerImageVersions.runner_image_versions?.[0];
             if (!latestRunnerImageVersion) {
                 if (retryCount < maxRetryCount) {
