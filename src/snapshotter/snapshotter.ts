@@ -34,17 +34,21 @@ export class Snapshotter {
       `Checking if snapshot alias '${opts.runnerImageAlias}' exists`
     )
 
+    const requestOptions = {
+      headers: {
+        'Authorization': `Bearer ${this.snapshotterOptions.warpbuildToken}`
+      }
+    }
     const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
       alias: opts.runnerImageAlias
-    })
+    }, requestOptions)
     let runnerImageID: string
     if (images.runner_images?.length || 0 > 0) {
       this.logger.info(
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${
-          opts.runnerImageAlias
+        `Updating existing snapshot alias '${opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
@@ -56,7 +60,7 @@ export class Snapshotter {
             snapshot_id: ''
           }
         }
-      })
+      }, requestOptions)
     } else {
       this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`)
       const createRunnerImageResponse =
@@ -67,7 +71,7 @@ export class Snapshotter {
               snapshot_id: ''
             }
           }
-        })
+        }, requestOptions)
 
       runnerImageID = createRunnerImageResponse.id
     }
@@ -88,7 +92,7 @@ export class Snapshotter {
         await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions(
           {
             runner_image_id: runnerImageID
-          }
+          }, requestOptions
         )
       const latestRunnerImageVersion =
         runnerImageVersions.runner_image_versions?.[0]
