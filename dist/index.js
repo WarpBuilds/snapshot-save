@@ -25117,7 +25117,8 @@ class Snapshotter {
             }
         };
         const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
-            alias: opts.runnerImageAlias
+            alias: opts.runnerImageAlias,
+            exclude_warpbuild_managed: true
         }, requestOptions);
         let runnerImageID;
         this.logger.debug('Found the following runner images:');
