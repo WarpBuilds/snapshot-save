@@ -77,6 +77,7 @@ export class Snapshotter {
         await warpbuildClient.v1RunnerImagesAPI.createRunnerImage(
           {
             body: {
+              type: 'warpbuild_snapshot_image',
               alias: opts.runnerImageAlias,
               warpbuild_snapshot_image: {
                 snapshot_id: ''
