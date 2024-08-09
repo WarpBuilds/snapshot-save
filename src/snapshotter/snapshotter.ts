@@ -46,6 +46,8 @@ export class Snapshotter {
       requestOptions
     )
     let runnerImageID: string
+    this.logger.debug('Found the following runner images:')
+    this.logger.debug(JSON.stringify(images, null, 2))
     if (images.runner_images?.length || 0 > 0) {
       this.logger.info(
         `Snapshot alias '${opts.runnerImageAlias}' already exists`

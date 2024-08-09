@@ -25120,6 +25120,8 @@ class Snapshotter {
             alias: opts.runnerImageAlias
         }, requestOptions);
         let runnerImageID;
+        this.logger.debug('Found the following runner images:');
+        this.logger.debug(JSON.stringify(images, null, 2));
         if (images.runner_images?.length || 0 > 0) {
             this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
             this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
