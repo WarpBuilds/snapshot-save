@@ -24,6 +24,10 @@ inputs:
   alias:
     description: "Alias for the snapshot"
     required: true
+  fail-on-error:
+    description: "Fail the action if an error occurs"
+    required: false
+    default: "true"
 
 # Define your outputs here.
 outputs: {}
