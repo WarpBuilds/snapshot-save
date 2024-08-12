@@ -25185,6 +25185,7 @@ class Snapshotter {
         const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes;
         const startTime = new Date().getTime();
         while (Date.now() - startTime < waitTimeout) {
+            this.logger.debug(`Fetching runner image versions for ${runnerImageID}`);
             // fetch all the runner image version for this runner image
             const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
                 runner_image_id: runnerImageID
