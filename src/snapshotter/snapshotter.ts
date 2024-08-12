@@ -125,12 +125,20 @@ export class Snapshotter {
     this.logger.info('Waiting for 10 seconds before checking snapshot status')
     await new Promise(resolve => setTimeout(resolve, 10000))
 
+    this.logger.info('Checking snapshot status')
+
     const retryCount = 0
     const maxRetryCount = 10
     const waitInterval = 5000
     const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes
     const startTime = new Date().getTime()
-    while (Date.now() - startTime < waitTimeout) {
+    while (true) {
+      const elapsedTime = Date.now() - startTime
+      this.logger.info(`Elapsed time: ${elapsedTime}ms`)
+      if (elapsedTime > waitTimeout) {
+        throw new Error('Snapshot creation timed out')
+      }
+
       this.logger.debug(`Fetching runner image versions for ${runnerImageID}`)
       // fetch all the runner image version for this runner image
       const runnerImageVersions =
