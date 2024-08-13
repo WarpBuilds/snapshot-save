@@ -2,7 +2,6 @@
 // 'x hours y minutes z seconds' if the time is > 1 hour
 // 'y minutes z seconds' if the time is < 1 hour
 // 'z seconds' if the time is < 1 minute
-// otherwise it retu
 export function humanTime(ms: number): string {
   const hours = Math.floor(ms / 3600000)
   const minutes = Math.floor((ms % 3600000) / 60000)

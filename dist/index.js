@@ -25015,7 +25015,6 @@ exports.humanTime = humanTime;
 // 'x hours y minutes z seconds' if the time is > 1 hour
 // 'y minutes z seconds' if the time is < 1 hour
 // 'z seconds' if the time is < 1 minute
-// otherwise it retu
 function humanTime(ms) {
     const hours = Math.floor(ms / 3600000);
     const minutes = Math.floor((ms % 3600000) / 60000);
@@ -25214,6 +25213,7 @@ class Snapshotter {
         const retryCount = 0;
         const maxRetryCount = 10;
         const waitInterval = 5000;
+        const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
         const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes;
         const startTime = new Date().getTime();
         while (true) {
@@ -25232,7 +25232,6 @@ class Snapshotter {
             if (!latestRunnerImageVersion) {
                 if (retryCount < maxRetryCount) {
                     this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
-                    const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
                     this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
                     await new Promise(resolve => setTimeout(resolve, waitInterval));
                 }
@@ -25249,7 +25248,7 @@ class Snapshotter {
             }
             if (latestRunnerImageVersion?.status === 'pending') {
                 this.logger.info('Snapshot creation pending');
-                this.logger.info(`Waiting for time duration ${waitInterval}ms`);
+                this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
                 await new Promise(resolve => setTimeout(resolve, waitInterval));
             }
         }

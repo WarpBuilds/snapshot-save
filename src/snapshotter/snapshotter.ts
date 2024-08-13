@@ -131,6 +131,7 @@ export class Snapshotter {
     const retryCount = 0
     const maxRetryCount = 10
     const waitInterval = 5000
+    const humanWaitingTime = humanTime(waitInterval)
     const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes
     const startTime = new Date().getTime()
     while (true) {
@@ -159,7 +160,6 @@ export class Snapshotter {
           this.logger.info(
             `No runner image version found for runner image ${runnerImageID}`
           )
-          const humanWaitingTime = humanTime(waitInterval)
           this.logger.info(`Waiting for time duration ${humanWaitingTime}`)
           await new Promise(resolve => setTimeout(resolve, waitInterval))
         } else {
@@ -180,7 +180,7 @@ export class Snapshotter {
 
       if (latestRunnerImageVersion?.status === 'pending') {
         this.logger.info('Snapshot creation pending')
-        this.logger.info(`Waiting for time duration ${waitInterval}ms`)
+        this.logger.info(`Waiting for time duration ${humanWaitingTime}`)
         await new Promise(resolve => setTimeout(resolve, waitInterval))
       }
     }
