@@ -1,6 +1,7 @@
 import { arch, platform } from 'os'
 import { Logger } from './logger'
 import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
+import { humanTime } from './human-time'
 
 export type SnapshotterOptions = {
   warpbuildToken: string
@@ -134,7 +135,9 @@ export class Snapshotter {
     const startTime = new Date().getTime()
     while (true) {
       const elapsedTime = Date.now() - startTime
-      this.logger.info(`Elapsed time: ${elapsedTime}ms`)
+      const humanElapsedTime = humanTime(elapsedTime)
+      this.logger.info(`Elapsed time: ${humanElapsedTime}`)
+
       if (elapsedTime > waitTimeout) {
         throw new Error('Snapshot creation timed out')
       }

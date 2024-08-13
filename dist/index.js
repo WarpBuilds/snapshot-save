@@ -25004,6 +25004,36 @@ async function run() {
 
 /***/ }),
 
+/***/ 7021:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.humanTime = humanTime;
+// humanTime returns a string in the format
+// 'x hours y minutes z seconds' if the time is > 1 hour
+// 'y minutes z seconds' if the time is < 1 hour
+// 'z seconds' if the time is < 1 minute
+// otherwise it retu
+function humanTime(ms) {
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    if (hours > 0) {
+        return `${hours} hours ${minutes} minutes ${seconds} seconds`;
+    }
+    else if (minutes > 0) {
+        return `${minutes} minutes ${seconds} seconds`;
+    }
+    else {
+        return `${seconds} seconds`;
+    }
+}
+
+
+/***/ }),
+
 /***/ 3168:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -25095,6 +25125,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Snapshotter = void 0;
 const os_1 = __nccwpck_require__(2037);
 const warpbuild_client_1 = __nccwpck_require__(1334);
+const human_time_1 = __nccwpck_require__(7021);
 class Snapshotter {
     so;
     snapshotterOptions;
@@ -25187,7 +25218,8 @@ class Snapshotter {
         const startTime = new Date().getTime();
         while (true) {
             const elapsedTime = Date.now() - startTime;
-            this.logger.info(`Elapsed time: ${elapsedTime}ms`);
+            const humanElapsedTime = (0, human_time_1.humanTime)(elapsedTime);
+            this.logger.info(`Elapsed time: ${humanElapsedTime}`);
             if (elapsedTime > waitTimeout) {
                 throw new Error('Snapshot creation timed out');
             }
