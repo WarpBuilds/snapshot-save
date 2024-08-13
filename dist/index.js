@@ -25232,7 +25232,8 @@ class Snapshotter {
             if (!latestRunnerImageVersion) {
                 if (retryCount < maxRetryCount) {
                     this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
-                    this.logger.info(`Waiting for time duration ${waitInterval}ms`);
+                    const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
+                    this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
                     await new Promise(resolve => setTimeout(resolve, waitInterval));
                 }
                 else {
