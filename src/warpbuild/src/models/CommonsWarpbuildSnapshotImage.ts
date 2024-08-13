@@ -20,6 +20,14 @@ import { mapValues } from '../runtime'
  */
 export interface CommonsWarpbuildSnapshotImage {
   /**
+   * AMIID is the ID of the AMI.
+   *
+   * +OutputOnly
+   * @type {string}
+   * @memberof CommonsWarpbuildSnapshotImage
+   */
+  ami_id?: string
+  /**
    * CreatorRunnerInstanceID is the ID of the runner instance that created the snapshot.
    * This is populated via the auth token.
    *
@@ -44,14 +52,6 @@ export interface CommonsWarpbuildSnapshotImage {
    * @memberof CommonsWarpbuildSnapshotImage
    */
   snapshot_id?: string
-  /**
-   * StackID is the ID of the stack.
-   *
-   * +OutputOnly
-   * @type {string}
-   * @memberof CommonsWarpbuildSnapshotImage
-   */
-  stack_id?: string
   /**
    * VCSOrganizationName is the name of the VCS organization.
    * This is populated via the auth token.
@@ -95,13 +95,13 @@ export function CommonsWarpbuildSnapshotImageFromJSONTyped(
     return json
   }
   return {
+    ami_id: json['ami_id'] == null ? undefined : json['ami_id'],
     creator_runner_instance_id:
       json['creator_runner_instance_id'] == null
         ? undefined
         : json['creator_runner_instance_id'],
     provider: json['provider'] == null ? undefined : json['provider'],
     snapshot_id: json['snapshot_id'] == null ? undefined : json['snapshot_id'],
-    stack_id: json['stack_id'] == null ? undefined : json['stack_id'],
     vcs_organization_name:
       json['vcs_organization_name'] == null
         ? undefined
@@ -120,10 +120,10 @@ export function CommonsWarpbuildSnapshotImageToJSON(
     return value
   }
   return {
+    ami_id: value['ami_id'],
     creator_runner_instance_id: value['creator_runner_instance_id'],
     provider: value['provider'],
     snapshot_id: value['snapshot_id'],
-    stack_id: value['stack_id'],
     vcs_organization_name: value['vcs_organization_name'],
     vcs_repository_name: value['vcs_repository_name']
   }

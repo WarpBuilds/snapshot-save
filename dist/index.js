@@ -27194,6 +27194,7 @@ exports.CommonsUpdateRunnerImageVersionInputFromJSON = CommonsUpdateRunnerImageV
 exports.CommonsUpdateRunnerImageVersionInputFromJSONTyped = CommonsUpdateRunnerImageVersionInputFromJSONTyped;
 exports.CommonsUpdateRunnerImageVersionInputToJSON = CommonsUpdateRunnerImageVersionInputToJSON;
 const CommonsUpdateContainerRunnerImageVersion_1 = __nccwpck_require__(5339);
+const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
 /**
  * Check if a given object implements the CommonsUpdateRunnerImageVersionInput interface.
  */
@@ -27210,7 +27211,11 @@ function CommonsUpdateRunnerImageVersionInputFromJSONTyped(json, ignoreDiscrimin
     return {
         container_runner_image_version: json['container_runner_image_version'] == null
             ? undefined
-            : (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionFromJSON)(json['container_runner_image_version'])
+            : (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionFromJSON)(json['container_runner_image_version']),
+        status: json['status'] == null ? undefined : json['status'],
+        warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageFromJSON)(json['warpbuild_snapshot_image'])
     };
 }
 function CommonsUpdateRunnerImageVersionInputToJSON(value) {
@@ -27218,7 +27223,9 @@ function CommonsUpdateRunnerImageVersionInputToJSON(value) {
         return value;
     }
     return {
-        container_runner_image_version: (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionToJSON)(value['container_runner_image_version'])
+        container_runner_image_version: (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionToJSON)(value['container_runner_image_version']),
+        status: value['status'],
+        warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
     };
 }
 
@@ -27318,12 +27325,12 @@ function CommonsWarpbuildSnapshotImageFromJSONTyped(json, ignoreDiscriminator) {
         return json;
     }
     return {
+        ami_id: json['ami_id'] == null ? undefined : json['ami_id'],
         creator_runner_instance_id: json['creator_runner_instance_id'] == null
             ? undefined
             : json['creator_runner_instance_id'],
         provider: json['provider'] == null ? undefined : json['provider'],
         snapshot_id: json['snapshot_id'] == null ? undefined : json['snapshot_id'],
-        stack_id: json['stack_id'] == null ? undefined : json['stack_id'],
         vcs_organization_name: json['vcs_organization_name'] == null
             ? undefined
             : json['vcs_organization_name'],
@@ -27337,10 +27344,10 @@ function CommonsWarpbuildSnapshotImageToJSON(value) {
         return value;
     }
     return {
+        ami_id: value['ami_id'],
         creator_runner_instance_id: value['creator_runner_instance_id'],
         provider: value['provider'],
         snapshot_id: value['snapshot_id'],
-        stack_id: value['stack_id'],
         vcs_organization_name: value['vcs_organization_name'],
         vcs_repository_name: value['vcs_repository_name']
     };

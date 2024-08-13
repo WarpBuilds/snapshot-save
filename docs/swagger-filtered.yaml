@@ -882,6 +882,10 @@ definitions:
     properties:
       container_runner_image_version:
         $ref: '#/definitions/commons.UpdateContainerRunnerImageVersion'
+      status:
+        type: string
+      warpbuild_snapshot_image:
+        $ref: '#/definitions/commons.WarpbuildSnapshotImage'
     type: object
   commons.WarpbuildImage:
     properties:
@@ -892,6 +896,12 @@ definitions:
     type: object
   commons.WarpbuildSnapshotImage:
     properties:
+      ami_id:
+        description: |-
+          AMIID is the ID of the AMI.
+
+          +OutputOnly
+        type: string
       creator_runner_instance_id:
         description: |-
           CreatorRunnerInstanceID is the ID of the runner instance that created the snapshot.
@@ -908,12 +918,6 @@ definitions:
       snapshot_id:
         description: |-
           SnapshotID is the ID of the snapshot.
-
-          +OutputOnly
-        type: string
-      stack_id:
-        description: |-
-          StackID is the ID of the stack.
 
           +OutputOnly
         type: string

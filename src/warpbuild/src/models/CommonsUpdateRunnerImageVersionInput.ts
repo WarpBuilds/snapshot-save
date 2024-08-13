@@ -19,6 +19,12 @@ import {
   CommonsUpdateContainerRunnerImageVersionFromJSONTyped,
   CommonsUpdateContainerRunnerImageVersionToJSON
 } from './CommonsUpdateContainerRunnerImageVersion'
+import type { CommonsWarpbuildSnapshotImage } from './CommonsWarpbuildSnapshotImage'
+import {
+  CommonsWarpbuildSnapshotImageFromJSON,
+  CommonsWarpbuildSnapshotImageFromJSONTyped,
+  CommonsWarpbuildSnapshotImageToJSON
+} from './CommonsWarpbuildSnapshotImage'
 
 /**
  *
@@ -32,6 +38,18 @@ export interface CommonsUpdateRunnerImageVersionInput {
    * @memberof CommonsUpdateRunnerImageVersionInput
    */
   container_runner_image_version?: CommonsUpdateContainerRunnerImageVersion
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsUpdateRunnerImageVersionInput
+   */
+  status?: string
+  /**
+   *
+   * @type {CommonsWarpbuildSnapshotImage}
+   * @memberof CommonsUpdateRunnerImageVersionInput
+   */
+  warpbuild_snapshot_image?: CommonsWarpbuildSnapshotImage
 }
 
 /**
@@ -62,6 +80,13 @@ export function CommonsUpdateRunnerImageVersionInputFromJSONTyped(
         ? undefined
         : CommonsUpdateContainerRunnerImageVersionFromJSON(
             json['container_runner_image_version']
+          ),
+    status: json['status'] == null ? undefined : json['status'],
+    warpbuild_snapshot_image:
+      json['warpbuild_snapshot_image'] == null
+        ? undefined
+        : CommonsWarpbuildSnapshotImageFromJSON(
+            json['warpbuild_snapshot_image']
           )
   }
 }
@@ -76,6 +101,10 @@ export function CommonsUpdateRunnerImageVersionInputToJSON(
     container_runner_image_version:
       CommonsUpdateContainerRunnerImageVersionToJSON(
         value['container_runner_image_version']
-      )
+      ),
+    status: value['status'],
+    warpbuild_snapshot_image: CommonsWarpbuildSnapshotImageToJSON(
+      value['warpbuild_snapshot_image']
+    )
   }
 }
