@@ -70,6 +70,13 @@ export interface CommonsWarpbuildSnapshotImage {
    * @memberof CommonsWarpbuildSnapshotImage
    */
   vcs_repository_name?: string
+  /**
+   * VersionID is the ID of the version.
+   * This is used when creating a new version of the snapshot.
+   * @type {number}
+   * @memberof CommonsWarpbuildSnapshotImage
+   */
+  version_id?: number
 }
 
 /**
@@ -109,7 +116,8 @@ export function CommonsWarpbuildSnapshotImageFromJSONTyped(
     vcs_repository_name:
       json['vcs_repository_name'] == null
         ? undefined
-        : json['vcs_repository_name']
+        : json['vcs_repository_name'],
+    version_id: json['version_id'] == null ? undefined : json['version_id']
   }
 }
 
@@ -125,6 +133,7 @@ export function CommonsWarpbuildSnapshotImageToJSON(
     provider: value['provider'],
     snapshot_id: value['snapshot_id'],
     vcs_organization_name: value['vcs_organization_name'],
-    vcs_repository_name: value['vcs_repository_name']
+    vcs_repository_name: value['vcs_repository_name'],
+    version_id: value['version_id']
   }
 }

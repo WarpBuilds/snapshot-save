@@ -2,6 +2,7 @@ import { arch, platform } from 'os'
 import { Logger } from './logger'
 import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
 import { humanTime } from './human-time'
+import { CommonsRunnerImageVersion } from '../warpbuild/src'
 
 export type SnapshotterOptions = {
   warpbuildToken: string
@@ -76,6 +77,8 @@ export class Snapshotter {
       requestOptions
     )
     let runnerImageID: string
+    let versionID = 0
+    let nextVersionID = 0
     this.logger.debug('Found the following runner images:')
     this.logger.debug(JSON.stringify(images, null, 2))
     if (images.runner_images?.length || 0 > 0) {
@@ -90,6 +93,9 @@ export class Snapshotter {
       runnerImageID = images.runner_images?.[0].id || ''
       const existingArch = images.runner_images?.[0].arch
       const existingOs = images.runner_images?.[0].os
+      versionID =
+        images.runner_images?.[0].warpbuild_snapshot_image?.version_id || 0
+      nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
           `Updating existing snapshot alias '${
@@ -110,7 +116,8 @@ export class Snapshotter {
           id: runnerImageID,
           body: {
             warpbuild_snapshot_image: {
-              snapshot_id: ''
+              snapshot_id: '',
+              version_id: nextVersionID
             }
           }
         },
@@ -127,7 +134,8 @@ export class Snapshotter {
               arch: currArch,
               os: currOs,
               warpbuild_snapshot_image: {
-                snapshot_id: ''
+                snapshot_id: '',
+                version_id: nextVersionID
               }
             }
           },
@@ -141,7 +149,6 @@ export class Snapshotter {
 
     this.logger.info('Checking snapshot status')
 
-    let foundPendingVersion = false
     const retryCount = 0
     const maxRetryCount = 10
     const waitInterval = 5000
@@ -167,27 +174,14 @@ export class Snapshotter {
           requestOptions
         )
 
-      if (!foundPendingVersion) {
-        this.logger.info(`Looking for pending runner image version`)
-        for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
-          []) {
-          if (runnerImageVersion.status === 'pending') {
-            foundPendingVersion = true
-            break
-          }
+      let latestRunnerImageVersion: CommonsRunnerImageVersion | undefined =
+        undefined
+      for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
+        []) {
+        if (runnerImageVersion.version_time_id === nextVersionID) {
+          latestRunnerImageVersion = runnerImageVersion
         }
       }
-
-      if (!foundPendingVersion) {
-        this.logger.info(
-          `No pending runner image version found. Waiting for time duration ${humanWaitingTime}`
-        )
-        await new Promise(resolve => setTimeout(resolve, waitInterval))
-        continue
-      }
-
-      const latestRunnerImageVersion =
-        runnerImageVersions.runner_image_versions?.[0]
 
       if (!latestRunnerImageVersion) {
         if (retryCount < maxRetryCount) {

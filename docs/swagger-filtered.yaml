@@ -935,6 +935,11 @@ definitions:
 
           +OutputOnly
         type: string
+      version_id:
+        description: |-
+          VersionID is the ID of the version.
+          This is used when creating a new version of the snapshot.
+        type: integer
     type: object
   types.GenericSuccessMessage:
     properties:

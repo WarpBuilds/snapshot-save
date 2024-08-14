@@ -25176,6 +25176,8 @@ class Snapshotter {
             exclude_warpbuild_managed: true
         }, requestOptions);
         let runnerImageID;
+        let versionID = 0;
+        let nextVersionID = 0;
         this.logger.debug('Found the following runner images:');
         this.logger.debug(JSON.stringify(images, null, 2));
         if (images.runner_images?.length || 0 > 0) {
@@ -25184,6 +25186,9 @@ class Snapshotter {
             runnerImageID = images.runner_images?.[0].id || '';
             const existingArch = images.runner_images?.[0].arch;
             const existingOs = images.runner_images?.[0].os;
+            versionID =
+                images.runner_images?.[0].warpbuild_snapshot_image?.version_id || 0;
+            nextVersionID = versionID + 1;
             if (existingArch !== currArch) {
                 throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);
             }
@@ -25194,7 +25199,8 @@ class Snapshotter {
                 id: runnerImageID,
                 body: {
                     warpbuild_snapshot_image: {
-                        snapshot_id: ''
+                        snapshot_id: '',
+                        version_id: nextVersionID
                     }
                 }
             }, requestOptions);
@@ -25208,7 +25214,8 @@ class Snapshotter {
                     arch: currArch,
                     os: currOs,
                     warpbuild_snapshot_image: {
-                        snapshot_id: ''
+                        snapshot_id: '',
+                        version_id: nextVersionID
                     }
                 }
             }, requestOptions);
@@ -25216,7 +25223,6 @@ class Snapshotter {
         }
         this.logger.info('Waiting for snapshot to be created');
         this.logger.info('Checking snapshot status');
-        let foundPendingVersion = false;
         const retryCount = 0;
         const maxRetryCount = 10;
         const waitInterval = 5000;
@@ -25235,22 +25241,13 @@ class Snapshotter {
             const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
                 runner_image_id: runnerImageID
             }, requestOptions);
-            if (!foundPendingVersion) {
-                this.logger.info(`Looking for pending runner image version`);
-                for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
-                    []) {
-                    if (runnerImageVersion.status === 'pending') {
-                        foundPendingVersion = true;
-                        break;
-                    }
+            let latestRunnerImageVersion = undefined;
+            for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
+                []) {
+                if (runnerImageVersion.version_time_id === nextVersionID) {
+                    latestRunnerImageVersion = runnerImageVersion;
                 }
             }
-            if (!foundPendingVersion) {
-                this.logger.info(`No pending runner image version found. Waiting for time duration ${humanWaitingTime}`);
-                await new Promise(resolve => setTimeout(resolve, waitInterval));
-                continue;
-            }
-            const latestRunnerImageVersion = runnerImageVersions.runner_image_versions?.[0];
             if (!latestRunnerImageVersion) {
                 if (retryCount < maxRetryCount) {
                     this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
@@ -27359,7 +27356,8 @@ function CommonsWarpbuildSnapshotImageFromJSONTyped(json, ignoreDiscriminator) {
             : json['vcs_organization_name'],
         vcs_repository_name: json['vcs_repository_name'] == null
             ? undefined
-            : json['vcs_repository_name']
+            : json['vcs_repository_name'],
+        version_id: json['version_id'] == null ? undefined : json['version_id']
     };
 }
 function CommonsWarpbuildSnapshotImageToJSON(value) {
@@ -27372,7 +27370,8 @@ function CommonsWarpbuildSnapshotImageToJSON(value) {
         provider: value['provider'],
         snapshot_id: value['snapshot_id'],
         vcs_organization_name: value['vcs_organization_name'],
-        vcs_repository_name: value['vcs_repository_name']
+        vcs_repository_name: value['vcs_repository_name'],
+        version_id: value['version_id']
     };
 }
 
