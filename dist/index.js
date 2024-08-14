@@ -25247,6 +25247,7 @@ class Snapshotter {
                     throw new Error(`No runner image version found for runner image ${runnerImageID}`);
                 }
             }
+            this.logger.debug(JSON.stringify(latestRunnerImageVersion, null, 2));
             if (latestRunnerImageVersion?.status === 'available') {
                 this.logger.info('Snapshot created');
                 break;
