@@ -51,7 +51,11 @@ export async function run(): Promise<void> {
       // if (error instanceof Error) core.setFailed(error.message)
     } else {
       // Log the error message
-      throw error
+      if (error instanceof Error) {
+        core.setFailed(error.message)
+      } else {
+        throw error
+      }
       // if (error instanceof Error) core.warning(error.message)
     }
   }

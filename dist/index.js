@@ -24995,7 +24995,12 @@ async function run() {
         }
         else {
             // Log the error message
-            throw error;
+            if (error instanceof Error) {
+                core.setFailed(error.message);
+            }
+            else {
+                throw error;
+            }
             // if (error instanceof Error) core.warning(error.message)
         }
     }
@@ -25185,10 +25190,10 @@ class Snapshotter {
             const existingArch = images.runner_images?.[0].arch;
             const existingOs = images.runner_images?.[0].os;
             if (existingArch !== currArch) {
-                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch} from ${existingArch} isn't possible'`);
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't possible'`);
             }
             if (existingOs !== currOs) {
-                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new os '${currOs} from ${existingOs} isn't possible'`);
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new os '${currOs}' from '${existingOs}' isn't possible'`);
             }
             await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage({
                 id: runnerImageID,
