@@ -139,11 +139,9 @@ export class Snapshotter {
 
     this.logger.info('Waiting for snapshot to be created')
 
-    this.logger.info('Waiting for 10 seconds before checking snapshot status')
-    await new Promise(resolve => setTimeout(resolve, 10000))
-
     this.logger.info('Checking snapshot status')
 
+    let foundPendingVersion = false
     const retryCount = 0
     const maxRetryCount = 10
     const waitInterval = 5000
@@ -168,6 +166,25 @@ export class Snapshotter {
           },
           requestOptions
         )
+
+      if (!foundPendingVersion) {
+        this.logger.info(`Looking for pending runner image version`)
+        for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
+          []) {
+          if (runnerImageVersion.status === 'pending') {
+            foundPendingVersion = true
+            break
+          }
+        }
+      }
+
+      if (!foundPendingVersion) {
+        this.logger.info(
+          `No pending runner image version found. Waiting for time duration ${humanWaitingTime}`
+        )
+        await new Promise(resolve => setTimeout(resolve, waitInterval))
+      }
+
       const latestRunnerImageVersion =
         runnerImageVersions.runner_image_versions?.[0]
 
