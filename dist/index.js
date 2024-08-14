@@ -25248,6 +25248,7 @@ class Snapshotter {
             if (!foundPendingVersion) {
                 this.logger.info(`No pending runner image version found. Waiting for time duration ${humanWaitingTime}`);
                 await new Promise(resolve => setTimeout(resolve, waitInterval));
+                continue;
             }
             const latestRunnerImageVersion = runnerImageVersions.runner_image_versions?.[0];
             if (!latestRunnerImageVersion) {

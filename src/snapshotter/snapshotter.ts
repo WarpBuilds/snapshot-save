@@ -183,6 +183,7 @@ export class Snapshotter {
           `No pending runner image version found. Waiting for time duration ${humanWaitingTime}`
         )
         await new Promise(resolve => setTimeout(resolve, waitInterval))
+        continue
       }
 
       const latestRunnerImageVersion =
