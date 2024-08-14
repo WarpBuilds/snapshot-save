@@ -88,6 +88,22 @@ export class Snapshotter {
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
+      const existingArch = images.runner_images?.[0].arch
+      const existingOs = images.runner_images?.[0].os
+      if (existingArch !== currArch) {
+        throw new Error(
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
+          }' to new arch '${currArch} from ${existingArch} isn't possible'`
+        )
+      }
+      if (existingOs !== currOs) {
+        throw new Error(
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
+          }' to new os '${currOs} from ${existingOs} isn't possible'`
+        )
+      }
 
       await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage(
         {
