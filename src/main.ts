@@ -47,16 +47,10 @@ export async function run(): Promise<void> {
   } catch (error) {
     if (failOnError) {
       // Fail the workflow run if an error occurs
-      throw error
-      // if (error instanceof Error) core.setFailed(error.message)
+      if (error instanceof Error) core.setFailed(error.message)
     } else {
       // Log the error message
-      if (error instanceof Error) {
-        core.setFailed(error.message)
-      } else {
-        throw error
-      }
-      // if (error instanceof Error) core.warning(error.message)
+      if (error instanceof Error) core.warning(error.message)
     }
   }
 }
