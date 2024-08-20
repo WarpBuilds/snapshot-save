@@ -24963,7 +24963,7 @@ async function run() {
         failOnError = true;
     }
     try {
-        const isPost = core.getState('isPost');
+        const isPost = !!core.getState('isPost');
         const warpbuildBaseURL = core.getInput('warpbuild-base-url');
         const runnerImageAlias = core.getInput('alias');
         if (runnerImageAlias === '') {
@@ -24983,8 +24983,9 @@ async function run() {
             warpbuildBaseURL,
             warpbuildToken
         });
-        if (isPost === 'false') {
+        if (isPost === false) {
             logger.info('Snapshot will be saved in the post action');
+            core.saveState('isPost', 'true');
             return;
         }
         await snapshotter.saveSnapshot({
