@@ -13,6 +13,7 @@ export async function run(): Promise<void> {
   }
 
   try {
+    const isPost = core.getState('isPost')
     const warpbuildBaseURL: string = core.getInput('warpbuild-base-url')
 
     const runnerImageAlias: string = core.getInput('alias')
@@ -39,6 +40,11 @@ export async function run(): Promise<void> {
       warpbuildBaseURL,
       warpbuildToken
     })
+
+    if (isPost === 'false') {
+      logger.info('Snapshot will be saved in the post action')
+      return
+    }
 
     await snapshotter.saveSnapshot({
       runnerImageAlias,
