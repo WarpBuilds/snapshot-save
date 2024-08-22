@@ -72,7 +72,7 @@ export class Snapshotter {
     const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages(
       {
         alias: opts.runnerImageAlias,
-        exclude_warpbuild_managed: true
+        type: ['warpbuild_snapshot_image']
       },
       requestOptions
     )

@@ -85,6 +85,18 @@ export interface CommonsRunnerImageVersion {
    * @type {string}
    * @memberof CommonsRunnerImageVersion
    */
+  parent_image_id?: string
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsRunnerImageVersion
+   */
+  root_parent_image_id?: string
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsRunnerImageVersion
+   */
   runner_image_id?: string
   /**
    *
@@ -164,6 +176,12 @@ export function CommonsRunnerImageVersionFromJSONTyped(
     organization_id:
       json['organization_id'] == null ? undefined : json['organization_id'],
     os: json['os'] == null ? undefined : json['os'],
+    parent_image_id:
+      json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+    root_parent_image_id:
+      json['root_parent_image_id'] == null
+        ? undefined
+        : json['root_parent_image_id'],
     runner_image_id:
       json['runner_image_id'] == null ? undefined : json['runner_image_id'],
     runner_image_pull_secret_id:
@@ -196,6 +214,8 @@ export function CommonsRunnerImageVersionToJSON(
     meta: CommonsRunnerImageVersionMetaToJSON(value['meta']),
     organization_id: value['organization_id'],
     os: value['os'],
+    parent_image_id: value['parent_image_id'],
+    root_parent_image_id: value['root_parent_image_id'],
     runner_image_id: value['runner_image_id'],
     runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
     stack_id: value['stack_id'],

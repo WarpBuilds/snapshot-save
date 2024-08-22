@@ -80,11 +80,13 @@ export interface GetRunnerImagePullSecretRequest {
 }
 
 export interface ListRunnerImagesRequest {
-  exclude_warpbuild_managed?: boolean
   alias?: string
   runner_image_pull_secret_id?: string
   stack_kind?: string
   region?: string
+  arch?: Array<ListRunnerImagesArchEnum>
+  os?: Array<ListRunnerImagesOsEnum>
+  type?: Array<ListRunnerImagesTypeEnum>
 }
 
 export interface UpdateRunnerImageRequest {
@@ -497,11 +499,6 @@ export class V1RunnerImagesApi extends runtime.BaseAPI {
   ): Promise<runtime.ApiResponse<CommonsListRunnerImagesOutput>> {
     const queryParameters: any = {}
 
-    if (requestParameters['exclude_warpbuild_managed'] != null) {
-      queryParameters['exclude_warpbuild_managed'] =
-        requestParameters['exclude_warpbuild_managed']
-    }
-
     if (requestParameters['alias'] != null) {
       queryParameters['alias'] = requestParameters['alias']
     }
@@ -517,6 +514,18 @@ export class V1RunnerImagesApi extends runtime.BaseAPI {
 
     if (requestParameters['region'] != null) {
       queryParameters['region'] = requestParameters['region']
+    }
+
+    if (requestParameters['arch'] != null) {
+      queryParameters['arch'] = requestParameters['arch']
+    }
+
+    if (requestParameters['os'] != null) {
+      queryParameters['os'] = requestParameters['os']
+    }
+
+    if (requestParameters['type'] != null) {
+      queryParameters['type'] = requestParameters['type']
     }
 
     const headerParameters: runtime.HTTPHeaders = {}
@@ -672,3 +681,32 @@ export class V1RunnerImagesApi extends runtime.BaseAPI {
     return await response.value()
   }
 }
+
+/**
+ * @export
+ */
+export const ListRunnerImagesArchEnum = {
+  x64: 'x64',
+  arm64: 'arm64'
+} as const
+export type ListRunnerImagesArchEnum =
+  (typeof ListRunnerImagesArchEnum)[keyof typeof ListRunnerImagesArchEnum]
+/**
+ * @export
+ */
+export const ListRunnerImagesOsEnum = {
+  mac: 'mac',
+  ubuntu: 'ubuntu'
+} as const
+export type ListRunnerImagesOsEnum =
+  (typeof ListRunnerImagesOsEnum)[keyof typeof ListRunnerImagesOsEnum]
+/**
+ * @export
+ */
+export const ListRunnerImagesTypeEnum = {
+  container: 'container',
+  warpbuild_managed: 'warpbuild_managed',
+  warpbuild_snapshot_image: 'warpbuild_snapshot_image'
+} as const
+export type ListRunnerImagesTypeEnum =
+  (typeof ListRunnerImagesTypeEnum)[keyof typeof ListRunnerImagesTypeEnum]

@@ -43,6 +43,12 @@ import {
   CommonsContainerRunnerImageFromJSONTyped,
   CommonsContainerRunnerImageToJSON
 } from './CommonsContainerRunnerImage'
+import type { CommonsRunnerImageVersion } from './CommonsRunnerImageVersion'
+import {
+  CommonsRunnerImageVersionFromJSON,
+  CommonsRunnerImageVersionFromJSONTyped,
+  CommonsRunnerImageVersionToJSON
+} from './CommonsRunnerImageVersion'
 
 /**
  *
@@ -103,6 +109,18 @@ export interface CommonsRunnerImage {
    * @type {string}
    * @memberof CommonsRunnerImage
    */
+  parent_image_id?: string
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsRunnerImage
+   */
+  root_parent_image_id?: string
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsRunnerImage
+   */
   runner_image_pull_secret_id?: string
   /**
    *
@@ -136,6 +154,12 @@ export interface CommonsRunnerImage {
   updated_at?: string
   /**
    *
+   * @type {CommonsRunnerImageVersion}
+   * @memberof CommonsRunnerImage
+   */
+  version?: CommonsRunnerImageVersion
+  /**
+   *
    * @type {CommonsWarpbuildImage}
    * @memberof CommonsRunnerImage
    */
@@ -166,7 +190,8 @@ export type CommonsRunnerImageStatusEnum =
  */
 export const CommonsRunnerImageTypeEnum = {
   container: 'container',
-  warpbuild_managed: 'warpbuild_managed'
+  warpbuild_managed: 'warpbuild_managed',
+  warpbuild_snapshot_image: 'warpbuild_snapshot_image'
 } as const
 export type CommonsRunnerImageTypeEnum =
   (typeof CommonsRunnerImageTypeEnum)[keyof typeof CommonsRunnerImageTypeEnum]
@@ -208,6 +233,12 @@ export function CommonsRunnerImageFromJSONTyped(
     organization_id:
       json['organization_id'] == null ? undefined : json['organization_id'],
     os: json['os'] == null ? undefined : json['os'],
+    parent_image_id:
+      json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+    root_parent_image_id:
+      json['root_parent_image_id'] == null
+        ? undefined
+        : json['root_parent_image_id'],
     runner_image_pull_secret_id:
       json['runner_image_pull_secret_id'] == null
         ? undefined
@@ -220,6 +251,10 @@ export function CommonsRunnerImageFromJSONTyped(
     status: json['status'] == null ? undefined : json['status'],
     type: json['type'] == null ? undefined : json['type'],
     updated_at: json['updated_at'] == null ? undefined : json['updated_at'],
+    version:
+      json['version'] == null
+        ? undefined
+        : CommonsRunnerImageVersionFromJSON(json['version']),
     warpbuild_image:
       json['warpbuild_image'] == null
         ? undefined
@@ -253,12 +288,15 @@ export function CommonsRunnerImageToJSON(
     id: value['id'],
     organization_id: value['organization_id'],
     os: value['os'],
+    parent_image_id: value['parent_image_id'],
+    root_parent_image_id: value['root_parent_image_id'],
     runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
     settings: CommonsRunnerImageSettingsToJSON(value['settings']),
     stack_id: value['stack_id'],
     status: value['status'],
     type: value['type'],
     updated_at: value['updated_at'],
+    version: CommonsRunnerImageVersionToJSON(value['version']),
     warpbuild_image: CommonsWarpbuildImageToJSON(value['warpbuild_image']),
     warpbuild_snapshot_image: CommonsWarpbuildSnapshotImageToJSON(
       value['warpbuild_snapshot_image']

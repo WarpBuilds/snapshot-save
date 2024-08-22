@@ -25179,7 +25179,7 @@ class Snapshotter {
         };
         const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
             alias: opts.runnerImageAlias,
-            exclude_warpbuild_managed: true
+            type: ['warpbuild_snapshot_image']
         }, requestOptions);
         let runnerImageID;
         let versionID = 0;
@@ -25522,7 +25522,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.V1RunnerImagesApi = void 0;
+exports.ListRunnerImagesTypeEnum = exports.ListRunnerImagesOsEnum = exports.ListRunnerImagesArchEnum = exports.V1RunnerImagesApi = void 0;
 const runtime = __importStar(__nccwpck_require__(5989));
 const index_1 = __nccwpck_require__(5708);
 /**
@@ -25727,10 +25727,6 @@ class V1RunnerImagesApi extends runtime.BaseAPI {
      */
     async listRunnerImagesRaw(requestParameters, initOverrides) {
         const queryParameters = {};
-        if (requestParameters['exclude_warpbuild_managed'] != null) {
-            queryParameters['exclude_warpbuild_managed'] =
-                requestParameters['exclude_warpbuild_managed'];
-        }
         if (requestParameters['alias'] != null) {
             queryParameters['alias'] = requestParameters['alias'];
         }
@@ -25743,6 +25739,15 @@ class V1RunnerImagesApi extends runtime.BaseAPI {
         }
         if (requestParameters['region'] != null) {
             queryParameters['region'] = requestParameters['region'];
+        }
+        if (requestParameters['arch'] != null) {
+            queryParameters['arch'] = requestParameters['arch'];
+        }
+        if (requestParameters['os'] != null) {
+            queryParameters['os'] = requestParameters['os'];
+        }
+        if (requestParameters['type'] != null) {
+            queryParameters['type'] = requestParameters['type'];
         }
         const headerParameters = {};
         const response = await this.request({
@@ -25820,6 +25825,28 @@ class V1RunnerImagesApi extends runtime.BaseAPI {
     }
 }
 exports.V1RunnerImagesApi = V1RunnerImagesApi;
+/**
+ * @export
+ */
+exports.ListRunnerImagesArchEnum = {
+    x64: 'x64',
+    arm64: 'arm64'
+};
+/**
+ * @export
+ */
+exports.ListRunnerImagesOsEnum = {
+    mac: 'mac',
+    ubuntu: 'ubuntu'
+};
+/**
+ * @export
+ */
+exports.ListRunnerImagesTypeEnum = {
+    container: 'container',
+    warpbuild_managed: 'warpbuild_managed',
+    warpbuild_snapshot_image: 'warpbuild_snapshot_image'
+};
 
 
 /***/ }),
@@ -26427,6 +26454,7 @@ const CommonsWarpbuildImage_1 = __nccwpck_require__(4891);
 const CommonsRunnerImageSettings_1 = __nccwpck_require__(4392);
 const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
 const CommonsContainerRunnerImage_1 = __nccwpck_require__(1241);
+const CommonsRunnerImageVersion_1 = __nccwpck_require__(3446);
 /**
  * @export
  */
@@ -26442,7 +26470,8 @@ exports.CommonsRunnerImageStatusEnum = {
  */
 exports.CommonsRunnerImageTypeEnum = {
     container: 'container',
-    warpbuild_managed: 'warpbuild_managed'
+    warpbuild_managed: 'warpbuild_managed',
+    warpbuild_snapshot_image: 'warpbuild_snapshot_image'
 };
 /**
  * Check if a given object implements the CommonsRunnerImage interface.
@@ -26472,6 +26501,10 @@ function CommonsRunnerImageFromJSONTyped(json, ignoreDiscriminator) {
         id: json['id'],
         organization_id: json['organization_id'] == null ? undefined : json['organization_id'],
         os: json['os'] == null ? undefined : json['os'],
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+        root_parent_image_id: json['root_parent_image_id'] == null
+            ? undefined
+            : json['root_parent_image_id'],
         runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
             ? undefined
             : json['runner_image_pull_secret_id'],
@@ -26482,6 +26515,9 @@ function CommonsRunnerImageFromJSONTyped(json, ignoreDiscriminator) {
         status: json['status'] == null ? undefined : json['status'],
         type: json['type'] == null ? undefined : json['type'],
         updated_at: json['updated_at'] == null ? undefined : json['updated_at'],
+        version: json['version'] == null
+            ? undefined
+            : (0, CommonsRunnerImageVersion_1.CommonsRunnerImageVersionFromJSON)(json['version']),
         warpbuild_image: json['warpbuild_image'] == null
             ? undefined
             : (0, CommonsWarpbuildImage_1.CommonsWarpbuildImageFromJSON)(json['warpbuild_image']),
@@ -26505,12 +26541,15 @@ function CommonsRunnerImageToJSON(value) {
         id: value['id'],
         organization_id: value['organization_id'],
         os: value['os'],
+        parent_image_id: value['parent_image_id'],
+        root_parent_image_id: value['root_parent_image_id'],
         runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
         settings: (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsToJSON)(value['settings']),
         stack_id: value['stack_id'],
         status: value['status'],
         type: value['type'],
         updated_at: value['updated_at'],
+        version: (0, CommonsRunnerImageVersion_1.CommonsRunnerImageVersionToJSON)(value['version']),
         warpbuild_image: (0, CommonsWarpbuildImage_1.CommonsWarpbuildImageToJSON)(value['warpbuild_image']),
         warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
     };
@@ -26903,6 +26942,10 @@ function CommonsRunnerImageVersionFromJSONTyped(json, ignoreDiscriminator) {
             : (0, CommonsRunnerImageVersionMeta_1.CommonsRunnerImageVersionMetaFromJSON)(json['meta']),
         organization_id: json['organization_id'] == null ? undefined : json['organization_id'],
         os: json['os'] == null ? undefined : json['os'],
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+        root_parent_image_id: json['root_parent_image_id'] == null
+            ? undefined
+            : json['root_parent_image_id'],
         runner_image_id: json['runner_image_id'] == null ? undefined : json['runner_image_id'],
         runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
             ? undefined
@@ -26927,6 +26970,8 @@ function CommonsRunnerImageVersionToJSON(value) {
         meta: (0, CommonsRunnerImageVersionMeta_1.CommonsRunnerImageVersionMetaToJSON)(value['meta']),
         organization_id: value['organization_id'],
         os: value['os'],
+        parent_image_id: value['parent_image_id'],
+        root_parent_image_id: value['root_parent_image_id'],
         runner_image_id: value['runner_image_id'],
         runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
         stack_id: value['stack_id'],
@@ -27238,6 +27283,7 @@ function CommonsUpdateRunnerImageVersionInputFromJSONTyped(json, ignoreDiscrimin
         container_runner_image_version: json['container_runner_image_version'] == null
             ? undefined
             : (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionFromJSON)(json['container_runner_image_version']),
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
         status: json['status'] == null ? undefined : json['status'],
         warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
             ? undefined
@@ -27250,6 +27296,7 @@ function CommonsUpdateRunnerImageVersionInputToJSON(value) {
     }
     return {
         container_runner_image_version: (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionToJSON)(value['container_runner_image_version']),
+        parent_image_id: value['parent_image_id'],
         status: value['status'],
         warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
     };

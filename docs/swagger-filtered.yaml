@@ -302,10 +302,6 @@ paths:
         - application/json
       operationId: ListRunnerImages
       parameters:
-        - description: Exclude Warp build managed images
-          in: query
-          name: exclude_warpbuild_managed
-          type: boolean
         - description: Alias
           in: query
           name: alias
@@ -322,6 +318,37 @@ paths:
           in: query
           name: region
           type: string
+        - collectionFormat: multi
+          description: Arch
+          in: query
+          items:
+            enum:
+              - x64
+              - arm64
+            type: string
+          name: arch
+          type: array
+        - collectionFormat: multi
+          description: OS
+          in: query
+          items:
+            enum:
+              - mac
+              - ubuntu
+            type: string
+          name: os
+          type: array
+        - collectionFormat: multi
+          description: Type
+          in: query
+          items:
+            enum:
+              - container
+              - warpbuild_managed
+              - warpbuild_snapshot_image
+            type: string
+          name: type
+          type: array
       produces:
         - application/json
       responses:
@@ -664,6 +691,10 @@ definitions:
         type: string
       os:
         type: string
+      parent_image_id:
+        type: string
+      root_parent_image_id:
+        type: string
       runner_image_pull_secret_id:
         type: string
       settings:
@@ -682,9 +713,19 @@ definitions:
         enum:
           - container
           - warpbuild_managed
+          - warpbuild_snapshot_image
         type: string
       updated_at:
         type: string
+      version:
+        $ref: '#/definitions/commons.RunnerImageVersion'
+        description: |-
+          Version is the latest version of the runner image.
+          This is present if the runner image is available to be used.
+
+          This is only populated by the runner image GET endpoint.
+
+          This is not populated if the type is 'warpbuild_managed'.
       warpbuild_image:
         $ref: '#/definitions/commons.WarpbuildImage'
         description: |-
@@ -800,6 +841,10 @@ definitions:
         type: string
       os:
         type: string
+      parent_image_id:
+        type: string
+      root_parent_image_id:
+        type: string
       runner_image_id:
         type: string
       runner_image_pull_secret_id:
@@ -882,6 +927,8 @@ definitions:
     properties:
       container_runner_image_version:
         $ref: '#/definitions/commons.UpdateContainerRunnerImageVersion'
+      parent_image_id:
+        type: string
       status:
         type: string
       warpbuild_snapshot_image:

@@ -43,6 +43,12 @@ export interface CommonsUpdateRunnerImageVersionInput {
    * @type {string}
    * @memberof CommonsUpdateRunnerImageVersionInput
    */
+  parent_image_id?: string
+  /**
+   *
+   * @type {string}
+   * @memberof CommonsUpdateRunnerImageVersionInput
+   */
   status?: string
   /**
    *
@@ -81,6 +87,8 @@ export function CommonsUpdateRunnerImageVersionInputFromJSONTyped(
         : CommonsUpdateContainerRunnerImageVersionFromJSON(
             json['container_runner_image_version']
           ),
+    parent_image_id:
+      json['parent_image_id'] == null ? undefined : json['parent_image_id'],
     status: json['status'] == null ? undefined : json['status'],
     warpbuild_snapshot_image:
       json['warpbuild_snapshot_image'] == null
@@ -102,6 +110,7 @@ export function CommonsUpdateRunnerImageVersionInputToJSON(
       CommonsUpdateContainerRunnerImageVersionToJSON(
         value['container_runner_image_version']
       ),
+    parent_image_id: value['parent_image_id'],
     status: value['status'],
     warpbuild_snapshot_image: CommonsWarpbuildSnapshotImageToJSON(
       value['warpbuild_snapshot_image']
