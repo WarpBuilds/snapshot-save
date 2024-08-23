@@ -25131,6 +25131,7 @@ exports.Snapshotter = void 0;
 const os_1 = __nccwpck_require__(2037);
 const warpbuild_client_1 = __nccwpck_require__(1334);
 const human_time_1 = __nccwpck_require__(7021);
+const child_process_1 = __nccwpck_require__(2081);
 class Snapshotter {
     so;
     snapshotterOptions;
@@ -25172,6 +25173,18 @@ class Snapshotter {
         const currArch = this.getArch();
         this.logger.info(`OS: ${currOs}`);
         this.logger.info(`Arch: ${currArch}`);
+        this.logger.info(`Running cleanup before snapshot`);
+        (0, child_process_1.exec)('./script/cleanup.sh', (error, stdout, stderr) => {
+            if (error) {
+                this.logger.error(error.message);
+                return;
+            }
+            if (stderr) {
+                this.logger.error(stderr);
+                return;
+            }
+            this.logger.info(stdout);
+        });
         const requestOptions = {
             headers: {
                 Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
@@ -27968,6 +27981,14 @@ module.exports = require("async_hooks");
 
 "use strict";
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ 2081:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
 
 /***/ }),
 

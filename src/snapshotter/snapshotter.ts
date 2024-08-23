@@ -3,6 +3,7 @@ import { Logger } from './logger'
 import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
 import { humanTime } from './human-time'
 import { CommonsRunnerImageVersion } from '../warpbuild/src'
+import { exec } from 'child_process'
 
 export type SnapshotterOptions = {
   warpbuildToken: string
@@ -63,6 +64,20 @@ export class Snapshotter {
     const currArch = this.getArch()
     this.logger.info(`OS: ${currOs}`)
     this.logger.info(`Arch: ${currArch}`)
+
+    this.logger.info(`Running cleanup before snapshot`)
+
+    exec('./script/cleanup.sh', (error, stdout, stderr) => {
+      if (error) {
+        this.logger.error(error.message)
+        return
+      }
+      if (stderr) {
+        this.logger.error(stderr)
+        return
+      }
+      this.logger.info(stdout)
+    })
 
     const requestOptions = {
       headers: {
