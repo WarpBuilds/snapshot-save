@@ -25174,6 +25174,8 @@ class Snapshotter {
         this.logger.info(`OS: ${currOs}`);
         this.logger.info(`Arch: ${currArch}`);
         this.logger.info(`Running cleanup before snapshot`);
+        const pwd = process.cwd();
+        this.logger.info(`Current working directory: ${pwd}`);
         (0, child_process_1.exec)('./script/cleanup.sh', (error, stdout, stderr) => {
             if (error) {
                 this.logger.error(error.message);

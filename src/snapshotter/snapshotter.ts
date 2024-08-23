@@ -66,6 +66,8 @@ export class Snapshotter {
     this.logger.info(`Arch: ${currArch}`)
 
     this.logger.info(`Running cleanup before snapshot`)
+    const pwd = process.cwd()
+    this.logger.info(`Current working directory: ${pwd}`)
 
     exec('./script/cleanup.sh', (error, stdout, stderr) => {
       if (error) {
