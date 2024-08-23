@@ -4,6 +4,7 @@ import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
 import { humanTime } from './human-time'
 import { CommonsRunnerImageVersion } from '../warpbuild/src'
 import { exec } from 'child_process'
+import * as fs from 'fs'
 
 export type SnapshotterOptions = {
   warpbuildToken: string
@@ -69,7 +70,23 @@ export class Snapshotter {
     const pwd = process.cwd()
     this.logger.info(`Current working directory: ${pwd}`)
 
-    exec('./script/cleanup.sh', (error, stdout, stderr) => {
+    const cleanupScript = `
+#!/bin/bash
+
+set -e
+
+# Remove /var/lib/warpbuild-agentd/settings.json
+sudo rm /var/lib/warpbuild-agentd/settings.json
+
+echo "Cleanup complete"
+`
+
+    const cleanupScriptFile = 'warp-snp-cleanup.sh'
+    fs.writeFileSync(cleanupScriptFile, cleanupScript)
+    fs.chmodSync(cleanupScriptFile, '755')
+    this.logger.info(`Cleanup script: ${cleanupScriptFile}`)
+
+    exec(cleanupScriptFile, (error, stdout, stderr) => {
       if (error) {
         this.logger.error(error.message)
         return
