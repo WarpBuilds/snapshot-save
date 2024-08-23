@@ -86,7 +86,7 @@ echo "Cleanup complete"
     fs.chmodSync(cleanupScriptFile, '755')
     this.logger.info(`Cleanup script: ${cleanupScriptFile}`)
 
-    exec(cleanupScriptFile, (error, stdout, stderr) => {
+    exec(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
       if (error) {
         this.logger.error(error.message)
         return

@@ -25214,7 +25214,7 @@ echo "Cleanup complete"
         fs.writeFileSync(cleanupScriptFile, cleanupScript);
         fs.chmodSync(cleanupScriptFile, '755');
         this.logger.info(`Cleanup script: ${cleanupScriptFile}`);
-        (0, child_process_1.exec)(cleanupScriptFile, (error, stdout, stderr) => {
+        (0, child_process_1.exec)(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
             if (error) {
                 this.logger.error(error.message);
                 return;
