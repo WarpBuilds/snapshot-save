@@ -25162,8 +25162,7 @@ class Snapshotter {
         this.snapshotterOptions = this.so;
         this.logger = this.so.log;
     }
-    getArch() {
-        // figure out the arch of the current system
+    getSupportedArch() {
         if ((0, os_1.arch)() === 'arm64') {
             return 'arm64';
         }
@@ -25172,8 +25171,7 @@ class Snapshotter {
         }
         return '';
     }
-    getOS() {
-        // get the OS of the current system
+    getSupportedOS() {
         if ((0, os_1.platform)() === 'linux') {
             return 'ubuntu';
         }
@@ -25185,8 +25183,8 @@ class Snapshotter {
             logger: this.logger,
             baseURL: this.snapshotterOptions.warpbuildBaseURL
         };
-        const currOs = this.getOS();
-        const currArch = this.getArch();
+        const currOs = this.getSupportedOS();
+        const currArch = this.getSupportedArch();
         this.logger.debug(`OS: ${currOs}`);
         this.logger.debug(`Arch: ${currArch}`);
         if (!currOs || !currArch) {

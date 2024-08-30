@@ -26,8 +26,7 @@ export class Snapshotter {
     this.logger = this.so.log
   }
 
-  getArch(): string {
-    // figure out the arch of the current system
+  getSupportedArch(): string {
     if (arch() === 'arm64') {
       return 'arm64'
     }
@@ -37,8 +36,7 @@ export class Snapshotter {
     return ''
   }
 
-  getOS(): string {
-    // get the OS of the current system
+  getSupportedOS(): string {
     if (platform() === 'linux') {
       return 'ubuntu'
     }
@@ -52,8 +50,8 @@ export class Snapshotter {
       baseURL: this.snapshotterOptions.warpbuildBaseURL
     }
 
-    const currOs = this.getOS()
-    const currArch = this.getArch()
+    const currOs = this.getSupportedOS()
+    const currArch = this.getSupportedArch()
     this.logger.debug(`OS: ${currOs}`)
     this.logger.debug(`Arch: ${currArch}`)
 
