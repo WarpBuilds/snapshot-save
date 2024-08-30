@@ -258,7 +258,7 @@ echo "Cleanup complete"
     } catch (error: any) {
       if (error instanceof ResponseError) {
         this.logger.error(
-          `Error: ${error.response.status} ${JSON.stringify(error.response)}`
+          `Error: ${error.response.status} ${error} ${error.response} ${error.response.json} ${error.response.statusText} ${error.response.text} ${JSON.stringify(error.response)}`
         )
         return Promise.reject(error.message)
       }
