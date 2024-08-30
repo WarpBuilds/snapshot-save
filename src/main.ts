@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { Snapshotter, Log } from './snapshotter'
+import { ResponseError } from './warpbuild/src'
 
 /**
  * The main function for the action.
@@ -40,24 +41,22 @@ export async function run(): Promise<void> {
       runnerImageAlias,
       waitTimeoutMinutes
     })
-  } catch (error) {
-    if (error instanceof Error) {
-      if (failOnError) {
-        // Fail the workflow run if an error occurs
-        core.setFailed(error.message)
-      } else {
-        // Log the error message as a warning
-        core.warning(error.message)
+  } catch (error: any) {
+    let errorMessage = error.message
+
+    if (error instanceof ResponseError) {
+      try {
+        const data = await error.response.json()
+        errorMessage = data['description'] ?? data['message'] ?? errorMessage
+      } catch (jsonError: any) {
+        errorMessage = `Failed to parse error response: ${jsonError?.message ?? ''}`
       }
+    }
+
+    if (failOnError) {
+      core.setFailed(errorMessage)
     } else {
-      // Handle non-Error exceptions
-      const errorMessage =
-        typeof error === 'string' ? error : JSON.stringify(error)
-      if (failOnError) {
-        core.setFailed(errorMessage)
-      } else {
-        core.warning(errorMessage)
-      }
+      core.warning(errorMessage)
     }
   }
 }

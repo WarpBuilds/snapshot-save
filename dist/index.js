@@ -24952,6 +24952,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
 const snapshotter_1 = __nccwpck_require__(3168);
+const src_1 = __nccwpck_require__(4519);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -24984,25 +24985,21 @@ async function run() {
         });
     }
     catch (error) {
-        if (error instanceof Error) {
-            if (failOnError) {
-                // Fail the workflow run if an error occurs
-                core.setFailed(error.message);
+        let errorMessage = error.message;
+        if (error instanceof src_1.ResponseError) {
+            try {
+                const data = await error.response.json();
+                errorMessage = data['description'] ?? data['message'] ?? errorMessage;
             }
-            else {
-                // Log the error message as a warning
-                core.warning(error.message);
+            catch (jsonError) {
+                errorMessage = `Failed to parse error response: ${jsonError?.message ?? ''}`;
             }
         }
+        if (failOnError) {
+            core.setFailed(errorMessage);
+        }
         else {
-            // Handle non-Error exceptions
-            const errorMessage = typeof error === 'string' ? error : JSON.stringify(error);
-            if (failOnError) {
-                core.setFailed(errorMessage);
-            }
-            else {
-                core.warning(errorMessage);
-            }
+            core.warning(errorMessage);
         }
     }
 }
@@ -25154,7 +25151,6 @@ exports.Snapshotter = void 0;
 const os_1 = __nccwpck_require__(2037);
 const warpbuild_client_1 = __nccwpck_require__(1334);
 const human_time_1 = __nccwpck_require__(7021);
-const src_1 = __nccwpck_require__(4519);
 const child_process_1 = __nccwpck_require__(2081);
 const fs = __importStar(__nccwpck_require__(7147));
 class Snapshotter {
@@ -25227,122 +25223,110 @@ echo "Cleanup complete"
         });
         const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
         this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
-        try {
-            const requestOptions = {
-                headers: {
-                    Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
+        const requestOptions = {
+            headers: {
+                Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
+            }
+        };
+        const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
+            alias: opts.runnerImageAlias,
+            type: ['warpbuild_snapshot_image']
+        }, requestOptions);
+        let runnerImageID;
+        let versionID = 0;
+        let nextVersionID = 0;
+        this.logger.debug('Found the following runner images:');
+        this.logger.debug(JSON.stringify(images, null, 2));
+        if ((images.runner_images?.length ?? 0) > 0) {
+            this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
+            this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
+            runnerImageID = images.runner_images?.[0].id || '';
+            const existingArch = images.runner_images?.[0].arch;
+            const existingOs = images.runner_images?.[0].os;
+            versionID =
+                images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0;
+            nextVersionID = versionID + 1;
+            if (existingArch !== currArch) {
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);
+            }
+            if (existingOs !== currOs) {
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new os '${currOs}' from '${existingOs}' isn't supported'`);
+            }
+            await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage({
+                id: runnerImageID,
+                body: {
+                    warpbuild_snapshot_image: {
+                        snapshot_id: '',
+                        version_id: nextVersionID
+                    }
                 }
-            };
-            const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
-                alias: opts.runnerImageAlias,
-                type: ['warpbuild_snapshot_image']
             }, requestOptions);
-            let runnerImageID;
-            let versionID = 0;
-            let nextVersionID = 0;
-            this.logger.debug('Found the following runner images:');
-            this.logger.debug(JSON.stringify(images, null, 2));
-            if ((images.runner_images?.length ?? 0) > 0) {
-                this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
-                this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
-                runnerImageID = images.runner_images?.[0].id || '';
-                const existingArch = images.runner_images?.[0].arch;
-                const existingOs = images.runner_images?.[0].os;
-                versionID =
-                    images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0;
-                nextVersionID = versionID + 1;
-                if (existingArch !== currArch) {
-                    throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);
-                }
-                if (existingOs !== currOs) {
-                    throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new os '${currOs}' from '${existingOs}' isn't supported'`);
-                }
-                await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage({
-                    id: runnerImageID,
-                    body: {
-                        warpbuild_snapshot_image: {
-                            snapshot_id: '',
-                            version_id: nextVersionID
-                        }
+        }
+        else {
+            this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`);
+            const createRunnerImageResponse = await warpbuildClient.v1RunnerImagesAPI.createRunnerImage({
+                body: {
+                    type: 'warpbuild_snapshot_image',
+                    alias: opts.runnerImageAlias,
+                    arch: currArch,
+                    os: currOs,
+                    warpbuild_snapshot_image: {
+                        snapshot_id: '',
+                        version_id: nextVersionID
                     }
-                }, requestOptions);
+                }
+            }, requestOptions);
+            runnerImageID = createRunnerImageResponse.id;
+        }
+        this.logger.info('Waiting for snapshot to be created');
+        this.logger.info('Checking snapshot status');
+        const retryCount = 0;
+        const maxRetryCount = 10;
+        const waitInterval = 5000;
+        const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
+        const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes;
+        const startTime = new Date().getTime();
+        while (true) {
+            const elapsedTime = Date.now() - startTime;
+            const humanElapsedTime = (0, human_time_1.humanTime)(elapsedTime);
+            this.logger.info(`Elapsed time: ${humanElapsedTime}`);
+            if (elapsedTime > waitTimeout) {
+                throw new Error('Snapshot creation timed out');
             }
-            else {
-                this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`);
-                const createRunnerImageResponse = await warpbuildClient.v1RunnerImagesAPI.createRunnerImage({
-                    body: {
-                        type: 'warpbuild_snapshot_image',
-                        alias: opts.runnerImageAlias,
-                        arch: currArch,
-                        os: currOs,
-                        warpbuild_snapshot_image: {
-                            snapshot_id: '',
-                            version_id: nextVersionID
-                        }
-                    }
-                }, requestOptions);
-                runnerImageID = createRunnerImageResponse.id;
+            this.logger.debug(`Fetching runner image versions for ${runnerImageID}`);
+            // fetch all the runner image version for this runner image
+            const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
+                runner_image_id: runnerImageID
+            }, requestOptions);
+            let latestRunnerImageVersion = undefined;
+            for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
+                []) {
+                if (runnerImageVersion.version_time_id === nextVersionID) {
+                    latestRunnerImageVersion = runnerImageVersion;
+                }
             }
-            this.logger.info('Waiting for snapshot to be created');
-            this.logger.info('Checking snapshot status');
-            const retryCount = 0;
-            const maxRetryCount = 10;
-            const waitInterval = 5000;
-            const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
-            const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes;
-            const startTime = new Date().getTime();
-            while (true) {
-                const elapsedTime = Date.now() - startTime;
-                const humanElapsedTime = (0, human_time_1.humanTime)(elapsedTime);
-                this.logger.info(`Elapsed time: ${humanElapsedTime}`);
-                if (elapsedTime > waitTimeout) {
-                    throw new Error('Snapshot creation timed out');
-                }
-                this.logger.debug(`Fetching runner image versions for ${runnerImageID}`);
-                // fetch all the runner image version for this runner image
-                const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
-                    runner_image_id: runnerImageID
-                }, requestOptions);
-                let latestRunnerImageVersion = undefined;
-                for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
-                    []) {
-                    if (runnerImageVersion.version_time_id === nextVersionID) {
-                        latestRunnerImageVersion = runnerImageVersion;
-                    }
-                }
-                if (!latestRunnerImageVersion) {
-                    if (retryCount < maxRetryCount) {
-                        this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
-                        this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
-                        await new Promise(resolve => setTimeout(resolve, waitInterval));
-                    }
-                    else {
-                        throw new Error(`No runner image version found for runner image ${runnerImageID}`);
-                    }
-                }
-                this.logger.debug(JSON.stringify(latestRunnerImageVersion, null, 2));
-                if (latestRunnerImageVersion?.status === 'available') {
-                    this.logger.info('Snapshot created');
-                    break;
-                }
-                if (latestRunnerImageVersion?.status === 'failed') {
-                    throw new Error('Snapshot creation failed');
-                }
-                if (latestRunnerImageVersion?.status === 'pending') {
-                    this.logger.info('Snapshot creation pending');
+            if (!latestRunnerImageVersion) {
+                if (retryCount < maxRetryCount) {
+                    this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
                     this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
                     await new Promise(resolve => setTimeout(resolve, waitInterval));
                 }
+                else {
+                    throw new Error(`No runner image version found for runner image ${runnerImageID}`);
+                }
             }
-        }
-        catch (error) {
-            if (error instanceof src_1.ResponseError) {
-                error.response.json().then(data => {
-                    throw new Error(data['description'] ?? data['message'] ?? 'Unknown error occurred');
-                });
+            this.logger.debug(JSON.stringify(latestRunnerImageVersion, null, 2));
+            if (latestRunnerImageVersion?.status === 'available') {
+                this.logger.info('Snapshot created');
+                break;
             }
-            else {
-                throw error;
+            if (latestRunnerImageVersion?.status === 'failed') {
+                throw new Error('Snapshot creation failed');
+            }
+            if (latestRunnerImageVersion?.status === 'pending') {
+                this.logger.info('Snapshot creation pending');
+                this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
+                await new Promise(resolve => setTimeout(resolve, waitInterval));
             }
         }
     }
