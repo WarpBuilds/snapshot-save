@@ -264,8 +264,8 @@ echo "Cleanup complete"
         return Promise.reject(error)
       }
 
-      this.logger.info(error)
-      this.logger.info(typeof error)
+      this.logger.info(`Error: ${error}`)
+      this.logger.info(`Error: ${typeof error}`)
 
       return Promise.reject(error)
     }
