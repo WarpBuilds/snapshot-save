@@ -260,18 +260,10 @@ echo "Cleanup complete"
         error.response.json().then(data => {
           this.logger.error(data)
           this.logger.error(JSON.stringify(data))
+          throw new Error(
+            data['description'] ?? data['message'] ?? 'Unknown error occurred'
+          )
         })
-        error.response.text().then(data => {
-          this.logger.error(data)
-        })
-        this.logger.error(
-          `Error: ${error.response.status} ${error.response.statusText} }`
-        )
-        throw new Error(
-          error?.response?.statusText ??
-            error.message ??
-            'Unknown error occurred'
-        )
       }
 
       throw error
