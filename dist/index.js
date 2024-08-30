@@ -25339,11 +25339,11 @@ echo "Cleanup complete"
         }
         catch (error) {
             if (error instanceof src_1.ResponseError) {
-                this.logger.error(`Error: ${error.response.status} ${error.message}`);
-                return Promise.reject(error);
+                this.logger.error(`Error: ${error.response.status} ${JSON.stringify(error.response)}`);
+                return Promise.reject(error.message);
             }
             this.logger.info(`Error: ${error}`);
-            this.logger.info(`Error: ${typeof error}`);
+            this.logger.info(`Error Typeof: ${typeof error}`);
             return Promise.reject(error);
         }
     }
