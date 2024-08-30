@@ -2,20 +2,20 @@
 
 <img src="images/logo.svg" alt="WarpSnapshot Logo" width="100"/>
 
-WarpSnapshot allows you to take snapshots of your runner VMs at any point in the
-workflow, enabling you to re-use them for faster consecutive workflow runs.
+WarpSnapshot enables you to capture snapshots of your runner VMs at any point in
+your workflow, allowing you to reuse them for faster consecutive runs.
 
 ## Prerequisites
 
-- This action is only supported on [WarpBuild](https://warpbuild.com) Linux
+- Supported Platforms: WarpSnapshot is supported exclusively on WarpBuild Linux
   runners.
-- Container based runner images are not supported.
-- Mac runners are not supported.
+- Unsupported Platforms: Container-based runner images and Mac runners are not
+  supported.
 
 ## Usage
 
-To use the WarpSnapshot action in your workflow, add the following step to your
-`.github/workflows/{workflow_name}.yml` file, preferably at the end:
+To incorporate WarpSnapshot into your workflow, add the following step to your
+.github/workflows/{workflow_name}.yml file, ideally at the end of the job:
 
 ```yaml
 jobs:
@@ -24,8 +24,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        ........
-        ........
+      # Rest of your build steps
       - name: Create snapshot
         uses: WarpBuild/WarpSnapshot@v1
         with:
@@ -42,23 +41,25 @@ jobs:
 - **fail-on-error** (Optional): If set to `true`, the action will fail if any
   error occurs during the snapshot process. Default is `true`.
 
-- **wait-timeout-minutes** (Optional): The maximum time to wait for the snapshot
-  to be created. Default is `30` minutes.
+- **wait-timeout-minutes** (Optional): The maximum time (in minutes) to wait for
+  the snapshot to be created. Default is `30` minutes.
 
 ### Conditional snapshot usage
 
-`runs-on` field in the workflow file can be used to conditionally use snapshot
-runners.
+You can conditionally utilize snapshot runners by configuring the `runs-on`
+field in your workflow:
 
 ```yaml
 jobs:
   build:
-    runs-on: ${{ contains(github.event.head_commit.message, '[warp-no-snapshot]') && 'warp-ubuntu-latest-x64-2x' || 'warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias' }}
+    runs-on:
+      ${{ contains(github.event.head_commit.message, '[warp-no-snapshot]') &&
+      'warp-ubuntu-latest-x64-2x' ||
+      'warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        ........
-        ........
+        # Add your build and test steps here
       - name: Create snapshot
         uses: WarpBuild/WarpSnapshot@v1
         with:
@@ -67,8 +68,8 @@ jobs:
 
 ### Complex conditionals
 
-You can use complex conditionals as well to determine if the runner should be
-stock or snapshot.
+For more advanced scenarios, you can determine whether to use a standard or
+snapshot runner based on branch protection or other conditions:
 
 ```yaml
 jobs:
@@ -99,19 +100,63 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        ........
-        ........
+        # Add your build and test steps here
       - name: Create snapshot
         uses: WarpBuild/WarpSnapshot@v1
         with:
           alias: 'unique-snapshot-alias'
 ```
 
+### Cleanup script
+
+It’s strongly recommended to add a cleanup step to remove credentials and
+sensitive information before creating a snapshot. This can be achieved by adding
+a cleanup script before the snapshot step:
+
+```yaml
+jobs:
+  build:
+    runs-on: warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        # Add your build and test steps here
+      - name: Cleanup VM
+        run: |
+          rm -rf $HOME/.ssh
+          rm -rf $HOME/.aws
+      - name: Create snapshot
+        uses: WarpBuild/WarpSnapshot@v1
+        with:
+          alias: 'unique-snapshot-alias'
+          fail-on-error: true
+          wait-timeout-minutes: 60
+```
+
 ## Security
+
+### Public Repositories
+
+When using public repositories, ensure that no sensitive information (such as
+cloud credentials) is stored in the snapshot. This is crucial as others may
+access the snapshot using the alias in a PR workflow run.
+
+### Private Repositories
+
+WarpBuild currently provisions runners at the organization level, and GitHub may
+allocate a runner intended for snapshot jobs to different jobs within the
+organization. This could lead to exposure of sensitive information to other
+users in the organization. It is recommended to use the cleanup script to remove
+sensitive data before creating a snapshot.
 
 ## Benchmarks
 
-## FAQ
+## Additional Resources
+
+### BYOC (Bring Your Own Cloud)
+
+Visit [WarpBuild Docs](https://docs.warpbuild.com) to learn more about how you
+can use your BYOC runners with WarpSnapshot.
 
 ## Author
 
