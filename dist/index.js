@@ -25326,12 +25326,19 @@ echo "Cleanup complete"
         }
         catch (error) {
             if (error instanceof src_1.ResponseError) {
-                this.logger.error(`Error: ${error.response.status} ${error.response.statusText} ${error.response.text()} ${error.cause} ${error.message} ${error.stack}`);
-                return Promise.reject(error.message);
+                error.response.json().then(data => {
+                    this.logger.error(data);
+                    this.logger.error(JSON.stringify(data));
+                });
+                error.response.text().then(data => {
+                    this.logger.error(data);
+                });
+                this.logger.error(`Error: ${error.response.status} ${error.response.statusText} }`);
+                throw new Error(error?.response?.statusText ??
+                    error.message ??
+                    'Unknown error occurred');
             }
-            this.logger.info(`Error: ${error}`);
-            this.logger.info(`Error Typeof: ${typeof error}`);
-            return Promise.reject(error);
+            throw error;
         }
     }
 }
