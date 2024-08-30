@@ -41,12 +41,23 @@ export async function run(): Promise<void> {
       waitTimeoutMinutes
     })
   } catch (error) {
-    if (failOnError) {
-      // Fail the workflow run if an error occurs
-      if (error instanceof Error) core.setFailed(error.message)
-    } else if (error instanceof Error) {
-      // Log the error message
-      core.warning(error.message)
+    if (error instanceof Error) {
+      if (failOnError) {
+        // Fail the workflow run if an error occurs
+        core.setFailed(error.message)
+      } else {
+        // Log the error message as a warning
+        core.warning(error.message)
+      }
+    } else {
+      // Handle non-Error exceptions
+      const errorMessage =
+        typeof error === 'string' ? error : JSON.stringify(error)
+      if (failOnError) {
+        core.setFailed(errorMessage)
+      } else {
+        core.warning(errorMessage)
+      }
     }
   }
 }
