@@ -24957,13 +24957,8 @@ const snapshotter_1 = __nccwpck_require__(3168);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
-    let failOnError;
-    failOnError = core.getBooleanInput('fail-on-error');
-    if (failOnError === undefined) {
-        failOnError = true;
-    }
+    let failOnError = core.getBooleanInput('fail-on-error');
     try {
-        // const isPost = !!core.getState('isPost')
         const warpbuildBaseURL = core.getInput('warpbuild-base-url');
         const runnerImageAlias = core.getInput('alias');
         if (runnerImageAlias === '') {
@@ -24983,11 +24978,6 @@ async function run() {
             warpbuildBaseURL,
             warpbuildToken
         });
-        // if (isPost === false) {
-        //   logger.info('Snapshot will be saved in the post action')
-        //   core.saveState('isPost', 'true')
-        //   return
-        // }
         await snapshotter.saveSnapshot({
             runnerImageAlias,
             waitTimeoutMinutes
@@ -25179,9 +25169,6 @@ class Snapshotter {
         // get the OS of the current system
         if ((0, os_1.platform)() === 'linux') {
             return 'ubuntu';
-        }
-        if ((0, os_1.platform)() === 'darwin') {
-            return 'mac';
         }
         return '';
     }

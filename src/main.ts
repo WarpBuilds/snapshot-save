@@ -6,14 +6,9 @@ import { Snapshotter, Log } from './snapshotter'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  let failOnError: boolean
-  failOnError = core.getBooleanInput('fail-on-error')
-  if (failOnError === undefined) {
-    failOnError = true
-  }
+  let failOnError = core.getBooleanInput('fail-on-error')
 
   try {
-    // const isPost = !!core.getState('isPost')
     const warpbuildBaseURL: string = core.getInput('warpbuild-base-url')
 
     const runnerImageAlias: string = core.getInput('alias')
@@ -40,12 +35,6 @@ export async function run(): Promise<void> {
       warpbuildBaseURL,
       warpbuildToken
     })
-
-    // if (isPost === false) {
-    //   logger.info('Snapshot will be saved in the post action')
-    //   core.saveState('isPost', 'true')
-    //   return
-    // }
 
     await snapshotter.saveSnapshot({
       runnerImageAlias,

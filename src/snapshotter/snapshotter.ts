@@ -42,9 +42,6 @@ export class Snapshotter {
     if (platform() === 'linux') {
       return 'ubuntu'
     }
-    if (platform() === 'darwin') {
-      return 'mac'
-    }
     return ''
   }
 
