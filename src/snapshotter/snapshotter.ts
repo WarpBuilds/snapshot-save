@@ -258,11 +258,14 @@ echo "Cleanup complete"
           await new Promise(resolve => setTimeout(resolve, waitInterval))
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof ResponseError) {
         this.logger.error(`Error: ${error.response.status} ${error.message}`)
         return Promise.reject(error)
       }
+
+      this.logger.info(error)
+      this.logger.info(typeof error)
 
       return Promise.reject(error)
     }
