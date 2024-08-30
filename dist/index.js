@@ -25327,12 +25327,12 @@ echo "Cleanup complete"
         catch (error) {
             if (error instanceof src_1.ResponseError) {
                 error.response.json().then(data => {
-                    this.logger.error(data);
-                    this.logger.error(JSON.stringify(data));
                     throw new Error(data['description'] ?? data['message'] ?? 'Unknown error occurred');
                 });
             }
-            throw error;
+            else {
+                throw error;
+            }
         }
     }
 }

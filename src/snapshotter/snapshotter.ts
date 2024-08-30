@@ -258,15 +258,13 @@ echo "Cleanup complete"
     } catch (error: any) {
       if (error instanceof ResponseError) {
         error.response.json().then(data => {
-          this.logger.error(data)
-          this.logger.error(JSON.stringify(data))
           throw new Error(
             data['description'] ?? data['message'] ?? 'Unknown error occurred'
           )
         })
+      } else {
+        throw error
       }
-
-      throw error
     }
   }
 }
