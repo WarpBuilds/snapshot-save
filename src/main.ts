@@ -29,8 +29,8 @@ export async function run(): Promise<void> {
     }
 
     const warpbuildToken: string =
-      process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN || ''
-    if (warpbuildToken === '') {
+      process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
+    if (!warpbuildToken) {
       throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set')
     }
 
@@ -55,9 +55,9 @@ export async function run(): Promise<void> {
     if (failOnError) {
       // Fail the workflow run if an error occurs
       if (error instanceof Error) core.setFailed(error.message)
-    } else {
+    } else if (error instanceof Error) {
       // Log the error message
-      if (error instanceof Error) core.warning(error.message)
+      core.warning(error.message)
     }
   }
 }

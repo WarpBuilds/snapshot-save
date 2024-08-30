@@ -7,7 +7,6 @@ author: 'WarpBuild'
 #   icon: "heart"
 #   color: "red"
 
-# Define your inputs here.
 inputs:
   # milliseconds:
   #   description: "Your input description here"
@@ -16,7 +15,6 @@ inputs:
   warpbuild-base-url:
     description: 'Warpbuild Server base URL'
     required: false
-    default: ''
   wait-timeout-minutes:
     description: 'Timeout in minutes to wait for the snapshot to be ready'
     required: false
@@ -29,7 +27,6 @@ inputs:
     required: false
     default: 'true'
 
-# Define your outputs here.
 outputs: {}
 
 runs:
