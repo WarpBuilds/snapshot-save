@@ -33,6 +33,10 @@ jobs:
           wait-timeout-minutes: 60
 ```
 
+Invoking the action creates the snapshot of the runner. To use the snapshot in
+subsequent runs, specify the snapshot alias in the `runs-on` field of the job as
+shown above.
+
 ### Inputs
 
 - **alias** (Required): A unique alias for the snapshot. This helps identify and
@@ -155,8 +159,8 @@ sensitive data before creating a snapshot.
 
 ### BYOC (Bring Your Own Cloud)
 
-Visit [WarpBuild Docs](https://docs.warpbuild.com) to learn more about how you
-can use your BYOC runners with WarpSnapshot.
+Visit [WarpBuild Docs](https://docs.warpbuild.com/snapshot-runners/byoc) to
+learn more about how you can use your BYOC runners with WarpSnapshot.
 
 ## Author
 
