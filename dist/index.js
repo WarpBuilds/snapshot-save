@@ -24958,17 +24958,13 @@ const src_1 = __nccwpck_require__(4519);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
-    const failOnError = core.getBooleanInput('fail-on-error');
     try {
         const warpbuildBaseURL = core.getInput('warpbuild-base-url');
         const runnerImageAlias = core.getInput('alias');
         if (runnerImageAlias === '') {
             throw new Error('alias is not set');
         }
-        let waitTimeoutMinutes = parseInt(core.getInput('wait-timeout-minutes'));
-        if (waitTimeoutMinutes === 0) {
-            waitTimeoutMinutes = 30;
-        }
+        const waitTimeoutMinutes = parseInt(core.getInput('wait-timeout-minutes'), 10) || 30;
         const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? '';
         if (!warpbuildToken) {
             throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set');
@@ -25000,6 +24996,7 @@ async function run() {
                 }
             }
         }
+        const failOnError = core.getBooleanInput('fail-on-error');
         if (failOnError) {
             core.setFailed(errorMessage);
         }

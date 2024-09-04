@@ -8,18 +8,17 @@ import { ResponseError } from './warpbuild/src'
  */
 export async function run(): Promise<void> {
   try {
-    const warpbuildBaseURL: string = core.getInput('warpbuild-base-url')
+    const warpbuildBaseURL = core.getInput('warpbuild-base-url')
 
-    const runnerImageAlias: string = core.getInput('alias')
+    const runnerImageAlias = core.getInput('alias')
     if (runnerImageAlias === '') {
       throw new Error('alias is not set')
     }
 
-    const waitTimeoutMinutes: number =
+    const waitTimeoutMinutes =
       parseInt(core.getInput('wait-timeout-minutes'), 10) || 30
 
-    const warpbuildToken: string =
-      process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
+    const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
     if (!warpbuildToken) {
       throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set')
     }
@@ -35,7 +34,7 @@ export async function run(): Promise<void> {
       runnerImageAlias,
       waitTimeoutMinutes
     })
-  } catch (error: unknown) {
+  } catch (error) {
     let errorMessage = 'Unknown error'
     if (error instanceof Error) {
       errorMessage = error.message
@@ -45,7 +44,7 @@ export async function run(): Promise<void> {
       try {
         const data = await error.response.json()
         errorMessage = data['description'] ?? data['message'] ?? errorMessage
-      } catch (jsonError: unknown) {
+      } catch (jsonError) {
         if (jsonError instanceof Error) {
           errorMessage = `Failed to parse error response: ${jsonError.message}`
         }
