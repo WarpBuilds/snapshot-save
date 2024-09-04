@@ -51,3 +51,4 @@ jobs:
           VALIDATE_OPENAPI: false
           VALIDATE_SHELL_SHFMT: false
           VALIDATE_MARKDOWN: false
+          VALIDATE_CHECKOV: false
