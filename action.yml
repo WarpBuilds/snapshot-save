@@ -9,7 +9,8 @@ inputs:
   wait-timeout-minutes:
     description: 'Timeout in minutes to wait for the snapshot to be ready'
     required: false
-    default: '30'
+    type: number
+    default: 30
   alias:
     description: 'Alias for the snapshot'
     required: true

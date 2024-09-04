@@ -7,8 +7,6 @@ import { ResponseError } from './warpbuild/src'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  const failOnError = core.getBooleanInput('fail-on-error')
-
   try {
     const warpbuildBaseURL: string = core.getInput('warpbuild-base-url')
 
@@ -17,12 +15,8 @@ export async function run(): Promise<void> {
       throw new Error('alias is not set')
     }
 
-    let waitTimeoutMinutes: number = parseInt(
-      core.getInput('wait-timeout-minutes')
-    )
-    if (waitTimeoutMinutes === 0) {
-      waitTimeoutMinutes = 30
-    }
+    const waitTimeoutMinutes: number =
+      parseInt(core.getInput('wait-timeout-minutes'), 10) || 30
 
     const warpbuildToken: string =
       process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
@@ -58,6 +52,7 @@ export async function run(): Promise<void> {
       }
     }
 
+    const failOnError = core.getBooleanInput('fail-on-error')
     if (failOnError) {
       core.setFailed(errorMessage)
     } else {
