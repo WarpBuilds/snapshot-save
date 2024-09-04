@@ -7,9 +7,8 @@ your workflow, allowing you to reuse them for faster consecutive runs.
 
 ## Prerequisites
 
-- Supported Platforms: WarpSnapshot is supported exclusively on WarpBuild Linux
-  runners.
-- Unsupported Platforms: Container-based runner images and Mac runners are not
+- Supported Platforms: WarpBuild Linux x64 and arm runners.
+- Unsupported Platforms: Container image based runners and Mac runners are not
   supported.
 
 ## Usage
@@ -69,6 +68,10 @@ jobs:
         with:
           alias: 'unique-snapshot-alias'
 ```
+
+The example above checks if the commit message contains `[warp-no-snapshot]`. If
+it does, the job runs on a standard runner. Otherwise, it runs on a snapshot
+runner with the specified alias.
 
 ### Complex conditionals
 
