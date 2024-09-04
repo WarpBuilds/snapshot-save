@@ -24958,7 +24958,7 @@ const src_1 = __nccwpck_require__(4519);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
-    let failOnError = core.getBooleanInput('fail-on-error');
+    const failOnError = core.getBooleanInput('fail-on-error');
     try {
         const warpbuildBaseURL = core.getInput('warpbuild-base-url');
         const runnerImageAlias = core.getInput('alias');
@@ -24985,14 +24985,19 @@ async function run() {
         });
     }
     catch (error) {
-        let errorMessage = error.message;
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
         if (error instanceof src_1.ResponseError) {
             try {
                 const data = await error.response.json();
                 errorMessage = data['description'] ?? data['message'] ?? errorMessage;
             }
             catch (jsonError) {
-                errorMessage = `Failed to parse error response: ${jsonError?.message ?? ''}`;
+                if (jsonError instanceof Error) {
+                    errorMessage = `Failed to parse error response: ${jsonError.message}`;
+                }
             }
         }
         if (failOnError) {

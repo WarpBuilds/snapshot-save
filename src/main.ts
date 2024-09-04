@@ -7,7 +7,7 @@ import { ResponseError } from './warpbuild/src'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  let failOnError = core.getBooleanInput('fail-on-error')
+  const failOnError = core.getBooleanInput('fail-on-error')
 
   try {
     const warpbuildBaseURL: string = core.getInput('warpbuild-base-url')
@@ -41,15 +41,20 @@ export async function run(): Promise<void> {
       runnerImageAlias,
       waitTimeoutMinutes
     })
-  } catch (error: any) {
-    let errorMessage = error.message
+  } catch (error: unknown) {
+    let errorMessage = 'Unknown error'
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
 
     if (error instanceof ResponseError) {
       try {
         const data = await error.response.json()
         errorMessage = data['description'] ?? data['message'] ?? errorMessage
-      } catch (jsonError: any) {
-        errorMessage = `Failed to parse error response: ${jsonError?.message ?? ''}`
+      } catch (jsonError: unknown) {
+        if (jsonError instanceof Error) {
+          errorMessage = `Failed to parse error response: ${jsonError.message}`
+        }
       }
     }
 
