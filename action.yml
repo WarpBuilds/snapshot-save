@@ -2,21 +2,10 @@ name: 'WarpSnapshot'
 description: 'Snapshot your volume and re-use it for faster builds'
 author: 'WarpBuild'
 
-# # Add your action's branding here. This will appear on the GitHub Marketplace.
-# branding:
-#   icon: "heart"
-#   color: "red"
-
-# Define your inputs here.
 inputs:
-  # milliseconds:
-  #   description: "Your input description here"
-  #   required: true
-  #   default: "1000"
   warpbuild-base-url:
     description: 'Warpbuild Server base URL'
     required: false
-    default: ''
   wait-timeout-minutes:
     description: 'Timeout in minutes to wait for the snapshot to be ready'
     required: false
@@ -29,10 +18,8 @@ inputs:
     required: false
     default: 'true'
 
-# Define your outputs here.
 outputs: {}
 
 runs:
   using: node20
   main: dist/index.js
-  # post: dist/index.js

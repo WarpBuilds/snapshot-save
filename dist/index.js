@@ -24952,18 +24952,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
 const snapshotter_1 = __nccwpck_require__(3168);
+const src_1 = __nccwpck_require__(4519);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
-    let failOnError;
-    failOnError = core.getBooleanInput('fail-on-error');
-    if (failOnError === undefined) {
-        failOnError = true;
-    }
+    let failOnError = core.getBooleanInput('fail-on-error');
     try {
-        // const isPost = !!core.getState('isPost')
         const warpbuildBaseURL = core.getInput('warpbuild-base-url');
         const runnerImageAlias = core.getInput('alias');
         if (runnerImageAlias === '') {
@@ -24973,8 +24969,8 @@ async function run() {
         if (waitTimeoutMinutes === 0) {
             waitTimeoutMinutes = 30;
         }
-        const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN || '';
-        if (warpbuildToken === '') {
+        const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? '';
+        if (!warpbuildToken) {
             throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set');
         }
         const logger = new snapshotter_1.Log();
@@ -24983,26 +24979,27 @@ async function run() {
             warpbuildBaseURL,
             warpbuildToken
         });
-        // if (isPost === false) {
-        //   logger.info('Snapshot will be saved in the post action')
-        //   core.saveState('isPost', 'true')
-        //   return
-        // }
         await snapshotter.saveSnapshot({
             runnerImageAlias,
             waitTimeoutMinutes
         });
     }
     catch (error) {
+        let errorMessage = error.message;
+        if (error instanceof src_1.ResponseError) {
+            try {
+                const data = await error.response.json();
+                errorMessage = data['description'] ?? data['message'] ?? errorMessage;
+            }
+            catch (jsonError) {
+                errorMessage = `Failed to parse error response: ${jsonError?.message ?? ''}`;
+            }
+        }
         if (failOnError) {
-            // Fail the workflow run if an error occurs
-            if (error instanceof Error)
-                core.setFailed(error.message);
+            core.setFailed(errorMessage);
         }
         else {
-            // Log the error message
-            if (error instanceof Error)
-                core.warning(error.message);
+            core.warning(errorMessage);
         }
     }
 }
@@ -25165,8 +25162,7 @@ class Snapshotter {
         this.snapshotterOptions = this.so;
         this.logger = this.so.log;
     }
-    getArch() {
-        // figure out the arch of the current system
+    getSupportedArch() {
         if ((0, os_1.arch)() === 'arm64') {
             return 'arm64';
         }
@@ -25175,13 +25171,9 @@ class Snapshotter {
         }
         return '';
     }
-    getOS() {
-        // get the OS of the current system
+    getSupportedOS() {
         if ((0, os_1.platform)() === 'linux') {
             return 'ubuntu';
-        }
-        if ((0, os_1.platform)() === 'darwin') {
-            return 'mac';
         }
         return '';
     }
@@ -25191,15 +25183,17 @@ class Snapshotter {
             logger: this.logger,
             baseURL: this.snapshotterOptions.warpbuildBaseURL
         };
-        const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
-        this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
-        const currOs = this.getOS();
-        const currArch = this.getArch();
-        this.logger.info(`OS: ${currOs}`);
-        this.logger.info(`Arch: ${currArch}`);
+        const currOs = this.getSupportedOS();
+        const currArch = this.getSupportedArch();
+        this.logger.debug(`OS: ${currOs}`);
+        this.logger.debug(`Arch: ${currArch}`);
+        if (!currOs || !currArch) {
+            this.logger.error(`Unsupported OS or architecture ${(0, os_1.platform)()} ${(0, os_1.arch)()}`);
+            return;
+        }
         this.logger.info(`Running cleanup before snapshot`);
         const pwd = process.cwd();
-        this.logger.info(`Current working directory: ${pwd}`);
+        this.logger.debug(`Current working directory: ${pwd}`);
         const cleanupScript = `
 #!/bin/bash
 
@@ -25213,7 +25207,7 @@ echo "Cleanup complete"
         const cleanupScriptFile = 'warp-snp-cleanup.sh';
         fs.writeFileSync(cleanupScriptFile, cleanupScript);
         fs.chmodSync(cleanupScriptFile, '755');
-        this.logger.info(`Cleanup script: ${cleanupScriptFile}`);
+        this.logger.debug(`Cleanup script: ${cleanupScriptFile}`);
         (0, child_process_1.exec)(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
             if (error) {
                 this.logger.error(error.message);
@@ -25223,8 +25217,10 @@ echo "Cleanup complete"
                 this.logger.error(stderr);
                 return;
             }
-            this.logger.info(stdout);
+            this.logger.debug(stdout);
         });
+        const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
+        this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
         const requestOptions = {
             headers: {
                 Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
@@ -25239,14 +25235,14 @@ echo "Cleanup complete"
         let nextVersionID = 0;
         this.logger.debug('Found the following runner images:');
         this.logger.debug(JSON.stringify(images, null, 2));
-        if (images.runner_images?.length || 0 > 0) {
+        if ((images.runner_images?.length ?? 0) > 0) {
             this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
             this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
             runnerImageID = images.runner_images?.[0].id || '';
             const existingArch = images.runner_images?.[0].arch;
             const existingOs = images.runner_images?.[0].os;
             versionID =
-                images.runner_images?.[0].warpbuild_snapshot_image?.version_id || 0;
+                images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0;
             nextVersionID = versionID + 1;
             if (existingArch !== currArch) {
                 throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);

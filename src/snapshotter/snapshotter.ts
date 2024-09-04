@@ -26,8 +26,7 @@ export class Snapshotter {
     this.logger = this.so.log
   }
 
-  getArch(): string {
-    // figure out the arch of the current system
+  getSupportedArch(): string {
     if (arch() === 'arm64') {
       return 'arm64'
     }
@@ -37,13 +36,9 @@ export class Snapshotter {
     return ''
   }
 
-  getOS(): string {
-    // get the OS of the current system
+  getSupportedOS(): string {
     if (platform() === 'linux') {
       return 'ubuntu'
-    }
-    if (platform() === 'darwin') {
-      return 'mac'
     }
     return ''
   }
@@ -55,20 +50,21 @@ export class Snapshotter {
       baseURL: this.snapshotterOptions.warpbuildBaseURL
     }
 
-    const warpbuildClient = new Warpbuild(wo)
+    const currOs = this.getSupportedOS()
+    const currArch = this.getSupportedArch()
+    this.logger.debug(`OS: ${currOs}`)
+    this.logger.debug(`Arch: ${currArch}`)
 
-    this.logger.info(
-      `Checking if snapshot alias '${opts.runnerImageAlias}' exists`
-    )
-
-    const currOs = this.getOS()
-    const currArch = this.getArch()
-    this.logger.info(`OS: ${currOs}`)
-    this.logger.info(`Arch: ${currArch}`)
+    if (!currOs || !currArch) {
+      this.logger.error(
+        `Unsupported OS or architecture ${platform()} ${arch()}`
+      )
+      return
+    }
 
     this.logger.info(`Running cleanup before snapshot`)
     const pwd = process.cwd()
-    this.logger.info(`Current working directory: ${pwd}`)
+    this.logger.debug(`Current working directory: ${pwd}`)
 
     const cleanupScript = `
 #!/bin/bash
@@ -84,7 +80,7 @@ echo "Cleanup complete"
     const cleanupScriptFile = 'warp-snp-cleanup.sh'
     fs.writeFileSync(cleanupScriptFile, cleanupScript)
     fs.chmodSync(cleanupScriptFile, '755')
-    this.logger.info(`Cleanup script: ${cleanupScriptFile}`)
+    this.logger.debug(`Cleanup script: ${cleanupScriptFile}`)
 
     exec(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
       if (error) {
@@ -95,8 +91,14 @@ echo "Cleanup complete"
         this.logger.error(stderr)
         return
       }
-      this.logger.info(stdout)
+      this.logger.debug(stdout)
     })
+
+    const warpbuildClient = new Warpbuild(wo)
+
+    this.logger.info(
+      `Checking if snapshot alias '${opts.runnerImageAlias}' exists`
+    )
 
     const requestOptions = {
       headers: {
@@ -115,7 +117,7 @@ echo "Cleanup complete"
     let nextVersionID = 0
     this.logger.debug('Found the following runner images:')
     this.logger.debug(JSON.stringify(images, null, 2))
-    if (images.runner_images?.length || 0 > 0) {
+    if ((images.runner_images?.length ?? 0) > 0) {
       this.logger.info(
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
@@ -128,7 +130,7 @@ echo "Cleanup complete"
       const existingArch = images.runner_images?.[0].arch
       const existingOs = images.runner_images?.[0].os
       versionID =
-        images.runner_images?.[0].warpbuild_snapshot_image?.version_id || 0
+        images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
