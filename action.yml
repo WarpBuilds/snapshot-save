@@ -1,4 +1,4 @@
-name: 'WarpSnapshot'
+name: 'snapshot-save'
 description: 'Snapshot your volume and re-use it for faster builds'
 author: 'WarpBuild'
 
