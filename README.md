@@ -96,7 +96,7 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/branches/$branch/protection")
           if [ $response -eq 200 ]; then
             echo "Branch is protected"
-            echo "runner=warp-ubuntu-latest-x64-2x" >> $GITHUB_OUTPUT
+            echo "runner=warp-ubuntu-latest-x64-8x;snapshot.key=unique-snapshot-alias" >> $GITHUB_OUTPUT
           else
             echo "Branch is not protected"
             echo "runner=warp-ubuntu-latest-x64-8x" >> $GITHUB_OUTPUT
