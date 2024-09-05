@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       TAG_NAME:
-        description: "Tag name that the major tag will point to"
+        description: 'Tag name that the major tag will point to'
         required: true
 
 env:
@@ -15,7 +15,9 @@ permissions:
 
 jobs:
   update_tag:
-    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
+    name:
+      Update the major tag to include the ${{ github.event.inputs.TAG_NAME ||
+      github.event.release.tag_name }} changes
     environment:
       name: releaseNewActionVersion
     runs-on: warp-ubuntu-latest-x64-2x
