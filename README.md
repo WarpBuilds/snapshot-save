@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v5
       # Rest of your build steps
       - name: Create snapshot
-        uses: WarpBuild/snapshot-save@v1
+        uses: WarpBuilds/snapshot-save@v1
         with:
           alias: 'unique-snapshot-alias'
           fail-on-error: true
@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v5
         # Add your build and test steps here
       - name: Create snapshot
-        uses: WarpBuild/snapshot-save@v1
+        uses: WarpBuilds/snapshot-save@v1
         with:
           alias: 'unique-snapshot-alias'
 ```
@@ -109,7 +109,7 @@ jobs:
         uses: actions/checkout@v5
         # Add your build and test steps here
       - name: Create snapshot
-        uses: WarpBuild/snapshot-save@v1
+        uses: WarpBuilds/snapshot-save@v1
         with:
           alias: 'unique-snapshot-alias'
 ```
@@ -133,7 +133,7 @@ jobs:
           rm -rf $HOME/.ssh
           rm -rf $HOME/.aws
       - name: Create snapshot
-        uses: WarpBuild/snapshot-save@v1
+        uses: WarpBuilds/snapshot-save@v1
         with:
           alias: 'unique-snapshot-alias'
           fail-on-error: true
