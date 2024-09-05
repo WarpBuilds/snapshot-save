@@ -19,7 +19,7 @@ To incorporate WarpSnapshot into your workflow, add the following step to your
 ```yaml
 jobs:
   build:
-    runs-on: warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias
+    runs-on: warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -58,7 +58,7 @@ jobs:
     runs-on:
       ${{ contains(github.event.head_commit.message, '[warp-no-snapshot]') &&
       'warp-ubuntu-latest-x64-2x' ||
-      'warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias' }}
+      'warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -123,7 +123,7 @@ a cleanup script before the snapshot step:
 ```yaml
 jobs:
   build:
-    runs-on: warp-ubuntu-latest-x64-2x;wb.snapshot.key=unique-snapshot-alias
+    runs-on: warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
