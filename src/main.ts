@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { Snapshotter, Log } from './snapshotter'
+import { ResponseError } from './warpbuild/src'
 
 /**
  * The main function for the action.
@@ -7,20 +8,54 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const warpbuildBaseURL = core.getInput('warpbuild-base-url')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    const runnerImageAlias = core.getInput('alias')
+    if (runnerImageAlias === '') {
+      throw new Error('alias is not set')
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const waitTimeoutMinutes =
+      parseInt(core.getInput('wait-timeout-minutes'), 10) || 30
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
+    if (!warpbuildToken) {
+      throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set')
+    }
+
+    const logger = new Log()
+    const snapshotter = new Snapshotter({
+      log: logger,
+      warpbuildBaseURL,
+      warpbuildToken
+    })
+
+    await snapshotter.saveSnapshot({
+      runnerImageAlias,
+      waitTimeoutMinutes
+    })
   } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    let errorMessage = 'Unknown error'
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+
+    if (error instanceof ResponseError) {
+      try {
+        const data = await error.response.json()
+        errorMessage = data['description'] ?? data['message'] ?? errorMessage
+      } catch (jsonError) {
+        if (jsonError instanceof Error) {
+          errorMessage = `Failed to parse error response: ${jsonError.message}`
+        }
+      }
+    }
+
+    const failOnError = core.getBooleanInput('fail-on-error')
+    if (failOnError) {
+      core.setFailed(errorMessage)
+    } else {
+      core.warning(errorMessage)
+    }
   }
 }

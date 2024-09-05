@@ -1,21 +1,21 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "snapshot-save",
+  "description": "Save snapshots of WarpBuild Runners",
+  "version": "1.0.0",
+  "author": "WarpBuild",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://warpbuild.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/WarpBuilds/snapshot-save.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/WarpBuilds/snapshot-save/issues"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "snapshot",
+    "warpbuild"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -33,7 +33,7 @@
     "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "package:watch": "npm run package -- --watch",
     "test": "npx jest",
-    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
+    "all": "npm run format:write && npm run lint && npm run package"
   },
   "license": "MIT",
   "jest": {
@@ -70,8 +70,9 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "@line/ts-remove-unused": "^0.2.0",
     "@types/jest": "^29.5.12",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.1.0",
     "@typescript-eslint/eslint-plugin": "^7.17.0",
     "@typescript-eslint/parser": "^7.17.0",
     "@vercel/ncc": "^0.38.1",

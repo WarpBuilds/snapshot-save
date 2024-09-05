@@ -1,23 +1,25 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'WarpSnapshot'
+description: 'Snapshot your volume and re-use it for faster builds'
+author: 'WarpBuild'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: 'heart'
-  color: 'red'
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  warpbuild-base-url:
+    description: 'Warpbuild Server base URL'
+    required: false
+  wait-timeout-minutes:
+    description: 'Timeout in minutes to wait for the snapshot to be ready'
+    required: false
+    type: number
+    default: 30
+  alias:
+    description: 'Alias for the snapshot'
     required: true
-    default: '1000'
+  fail-on-error:
+    description: 'Fail the action if an error occurs'
+    required: false
+    default: 'true'
 
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+outputs: {}
 
 runs:
   using: node20

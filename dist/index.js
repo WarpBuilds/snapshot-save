@@ -24951,53 +24951,3049 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
-const wait_1 = __nccwpck_require__(5259);
+const snapshotter_1 = __nccwpck_require__(3168);
+const src_1 = __nccwpck_require__(4519);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
-        const ms = core.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        core.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        core.debug(new Date().toTimeString());
-        await (0, wait_1.wait)(parseInt(ms, 10));
-        core.debug(new Date().toTimeString());
-        // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        const warpbuildBaseURL = core.getInput('warpbuild-base-url');
+        const runnerImageAlias = core.getInput('alias');
+        if (runnerImageAlias === '') {
+            throw new Error('alias is not set');
+        }
+        const waitTimeoutMinutes = parseInt(core.getInput('wait-timeout-minutes'), 10) || 30;
+        const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? '';
+        if (!warpbuildToken) {
+            throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set');
+        }
+        const logger = new snapshotter_1.Log();
+        const snapshotter = new snapshotter_1.Snapshotter({
+            log: logger,
+            warpbuildBaseURL,
+            warpbuildToken
+        });
+        await snapshotter.saveSnapshot({
+            runnerImageAlias,
+            waitTimeoutMinutes
+        });
     }
     catch (error) {
-        // Fail the workflow run if an error occurs
-        if (error instanceof Error)
-            core.setFailed(error.message);
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        if (error instanceof src_1.ResponseError) {
+            try {
+                const data = await error.response.json();
+                errorMessage = data['description'] ?? data['message'] ?? errorMessage;
+            }
+            catch (jsonError) {
+                if (jsonError instanceof Error) {
+                    errorMessage = `Failed to parse error response: ${jsonError.message}`;
+                }
+            }
+        }
+        const failOnError = core.getBooleanInput('fail-on-error');
+        if (failOnError) {
+            core.setFailed(errorMessage);
+        }
+        else {
+            core.warning(errorMessage);
+        }
     }
 }
 
 
 /***/ }),
 
-/***/ 5259:
+/***/ 7021:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wait = wait;
-/**
- * Wait for a number of milliseconds.
- * @param milliseconds The number of milliseconds to wait.
- * @returns {Promise<string>} Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise(resolve => {
-        if (isNaN(milliseconds)) {
-            throw new Error('milliseconds not a number');
-        }
-        setTimeout(() => resolve('done!'), milliseconds);
-    });
+exports.humanTime = humanTime;
+// humanTime returns a string in the format
+// 'x hours y minutes z seconds' if the time is > 1 hour
+// 'y minutes z seconds' if the time is < 1 hour
+// 'z seconds' if the time is < 1 minute
+function humanTime(ms) {
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    if (hours > 0) {
+        return `${hours} hours ${minutes} minutes ${seconds} seconds`;
+    }
+    else if (minutes > 0) {
+        return `${minutes} minutes ${seconds} seconds`;
+    }
+    else {
+        return `${seconds} seconds`;
+    }
 }
+
+
+/***/ }),
+
+/***/ 3168:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+// generate a class which has saveSnapshot method
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(5901), exports);
+__exportStar(__nccwpck_require__(6463), exports);
+
+
+/***/ }),
+
+/***/ 5901:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Log = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+// Log class that implements the Logger interface
+class Log {
+    logger = core;
+    constructor(logger = core) {
+        this.logger = logger;
+    }
+    info(message) {
+        this.logger.info(message);
+    }
+    debug(message) {
+        this.logger.debug(message);
+    }
+    warn(message) {
+        this.logger.warning(message);
+    }
+    error(message) {
+        this.logger.error(message);
+    }
+}
+exports.Log = Log;
+
+
+/***/ }),
+
+/***/ 6463:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Snapshotter = void 0;
+const os_1 = __nccwpck_require__(2037);
+const warpbuild_client_1 = __nccwpck_require__(1334);
+const human_time_1 = __nccwpck_require__(7021);
+const child_process_1 = __nccwpck_require__(2081);
+const fs = __importStar(__nccwpck_require__(7147));
+class Snapshotter {
+    so;
+    snapshotterOptions;
+    logger;
+    constructor(so) {
+        this.so = so;
+        this.snapshotterOptions = this.so;
+        this.logger = this.so.log;
+    }
+    getSupportedArch() {
+        if ((0, os_1.arch)() === 'arm64') {
+            return 'arm64';
+        }
+        if ((0, os_1.arch)() === 'x64') {
+            return 'x64';
+        }
+        return '';
+    }
+    getSupportedOS() {
+        if ((0, os_1.platform)() === 'linux') {
+            return 'ubuntu';
+        }
+        return '';
+    }
+    async saveSnapshot(opts) {
+        const wo = {
+            token: this.snapshotterOptions.warpbuildToken,
+            logger: this.logger,
+            baseURL: this.snapshotterOptions.warpbuildBaseURL
+        };
+        const currOs = this.getSupportedOS();
+        const currArch = this.getSupportedArch();
+        this.logger.debug(`OS: ${currOs}`);
+        this.logger.debug(`Arch: ${currArch}`);
+        if (!currOs || !currArch) {
+            this.logger.error(`Unsupported OS or architecture ${(0, os_1.platform)()} ${(0, os_1.arch)()}`);
+            return;
+        }
+        this.logger.info(`Running cleanup before snapshot`);
+        const pwd = process.cwd();
+        this.logger.debug(`Current working directory: ${pwd}`);
+        const cleanupScript = `
+#!/bin/bash
+
+set -e
+
+# Remove /var/lib/warpbuild-agentd/settings.json
+sudo rm /var/lib/warpbuild-agentd/settings.json
+
+echo "Cleanup complete"
+`;
+        const cleanupScriptFile = 'warp-snp-cleanup.sh';
+        fs.writeFileSync(cleanupScriptFile, cleanupScript);
+        fs.chmodSync(cleanupScriptFile, '755');
+        this.logger.debug(`Cleanup script: ${cleanupScriptFile}`);
+        (0, child_process_1.exec)(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
+            if (error) {
+                this.logger.error(error.message);
+                return;
+            }
+            if (stderr) {
+                this.logger.error(stderr);
+                return;
+            }
+            this.logger.debug(stdout);
+        });
+        const warpbuildClient = new warpbuild_client_1.Warpbuild(wo);
+        this.logger.info(`Checking if snapshot alias '${opts.runnerImageAlias}' exists`);
+        const requestOptions = {
+            headers: {
+                Authorization: `Bearer ${this.snapshotterOptions.warpbuildToken}`
+            }
+        };
+        const images = await warpbuildClient.v1RunnerImagesAPI.listRunnerImages({
+            alias: opts.runnerImageAlias,
+            type: ['warpbuild_snapshot_image']
+        }, requestOptions);
+        let runnerImageID;
+        let versionID = 0;
+        let nextVersionID = 0;
+        this.logger.debug('Found the following runner images:');
+        this.logger.debug(JSON.stringify(images, null, 2));
+        if ((images.runner_images?.length ?? 0) > 0) {
+            this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
+            this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
+            runnerImageID = images.runner_images?.[0].id || '';
+            const existingArch = images.runner_images?.[0].arch;
+            const existingOs = images.runner_images?.[0].os;
+            versionID =
+                images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0;
+            nextVersionID = versionID + 1;
+            if (existingArch !== currArch) {
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);
+            }
+            if (existingOs !== currOs) {
+                throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new os '${currOs}' from '${existingOs}' isn't supported'`);
+            }
+            await warpbuildClient.v1RunnerImagesAPI.updateRunnerImage({
+                id: runnerImageID,
+                body: {
+                    warpbuild_snapshot_image: {
+                        snapshot_id: '',
+                        version_id: nextVersionID
+                    }
+                }
+            }, requestOptions);
+        }
+        else {
+            this.logger.info(`Creating new snapshot alias '${opts.runnerImageAlias}'`);
+            const createRunnerImageResponse = await warpbuildClient.v1RunnerImagesAPI.createRunnerImage({
+                body: {
+                    type: 'warpbuild_snapshot_image',
+                    alias: opts.runnerImageAlias,
+                    arch: currArch,
+                    os: currOs,
+                    warpbuild_snapshot_image: {
+                        snapshot_id: '',
+                        version_id: nextVersionID
+                    }
+                }
+            }, requestOptions);
+            runnerImageID = createRunnerImageResponse.id;
+        }
+        this.logger.info('Waiting for snapshot to be created');
+        this.logger.info('Checking snapshot status');
+        const retryCount = 0;
+        const maxRetryCount = 10;
+        const waitInterval = 5000;
+        const humanWaitingTime = (0, human_time_1.humanTime)(waitInterval);
+        const waitTimeout = 1000 * 60 * opts.waitTimeoutMinutes;
+        const startTime = new Date().getTime();
+        while (true) {
+            const elapsedTime = Date.now() - startTime;
+            const humanElapsedTime = (0, human_time_1.humanTime)(elapsedTime);
+            this.logger.info(`Elapsed time: ${humanElapsedTime}`);
+            if (elapsedTime > waitTimeout) {
+                throw new Error('Snapshot creation timed out');
+            }
+            this.logger.debug(`Fetching runner image versions for ${runnerImageID}`);
+            // fetch all the runner image version for this runner image
+            const runnerImageVersions = await warpbuildClient.v1RunnerImagesVersionsAPI.listRunnerImageVersions({
+                runner_image_id: runnerImageID
+            }, requestOptions);
+            let latestRunnerImageVersion = undefined;
+            for (const runnerImageVersion of runnerImageVersions.runner_image_versions ||
+                []) {
+                if (runnerImageVersion.version_time_id === nextVersionID) {
+                    latestRunnerImageVersion = runnerImageVersion;
+                }
+            }
+            if (!latestRunnerImageVersion) {
+                if (retryCount < maxRetryCount) {
+                    this.logger.info(`No runner image version found for runner image ${runnerImageID}`);
+                    this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
+                    await new Promise(resolve => setTimeout(resolve, waitInterval));
+                }
+                else {
+                    throw new Error(`No runner image version found for runner image ${runnerImageID}`);
+                }
+            }
+            this.logger.debug(JSON.stringify(latestRunnerImageVersion, null, 2));
+            if (latestRunnerImageVersion?.status === 'available') {
+                this.logger.info('Snapshot created');
+                break;
+            }
+            if (latestRunnerImageVersion?.status === 'failed') {
+                throw new Error('Snapshot creation failed');
+            }
+            if (latestRunnerImageVersion?.status === 'pending') {
+                this.logger.info('Snapshot creation pending');
+                this.logger.info(`Waiting for time duration ${humanWaitingTime}`);
+                await new Promise(resolve => setTimeout(resolve, waitInterval));
+            }
+        }
+    }
+}
+exports.Snapshotter = Snapshotter;
+
+
+/***/ }),
+
+/***/ 1334:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Warpbuild = void 0;
+const src_1 = __nccwpck_require__(4519);
+class Warpbuild {
+    token;
+    logger;
+    baseURL;
+    configuration;
+    v1RunnerImagesAPI;
+    v1RunnerImagesVersionsAPI;
+    constructor(opt) {
+        this.logger = opt.logger;
+        this.token = opt.token;
+        this.baseURL = opt.baseURL;
+        const cp = {
+            accessToken: this.token
+        };
+        if (this.baseURL !== '') {
+            cp.basePath = this.baseURL;
+        }
+        this.configuration = new src_1.Configuration(cp);
+        this.v1RunnerImagesAPI = new src_1.V1RunnerImagesApi(this.configuration);
+        //
+        this.v1RunnerImagesVersionsAPI = new src_1.V1RunnerImageVersionsApi(this.configuration);
+    }
+}
+exports.Warpbuild = Warpbuild;
+
+
+/***/ }),
+
+/***/ 4882:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.V1RunnerImageVersionsApi = void 0;
+const runtime = __importStar(__nccwpck_require__(5989));
+const index_1 = __nccwpck_require__(5708);
+/**
+ *
+ */
+class V1RunnerImageVersionsApi extends runtime.BaseAPI {
+    /**
+     * Delete runner image version details for the id.
+     */
+    async deleteRunnerImageVersionRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling deleteRunnerImageVersion().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-versions/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.TypesGenericSuccessMessageFromJSON)(jsonValue));
+    }
+    /**
+     * Delete runner image version details for the id.
+     */
+    async deleteRunnerImageVersion(requestParameters, initOverrides) {
+        const response = await this.deleteRunnerImageVersionRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Get runner image version details for the id.
+     */
+    async getRunnerImageVersionRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling getRunnerImageVersion().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-versions/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageVersionFromJSON)(jsonValue));
+    }
+    /**
+     * Get runner image version details for the id.
+     */
+    async getRunnerImageVersion(requestParameters, initOverrides) {
+        const response = await this.getRunnerImageVersionRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * List all runner image versions.
+     */
+    async listRunnerImageVersionsRaw(requestParameters, initOverrides) {
+        if (requestParameters['runner_image_id'] == null) {
+            throw new runtime.RequiredError('runner_image_id', 'Required parameter "runner_image_id" was null or undefined when calling listRunnerImageVersions().');
+        }
+        const queryParameters = {};
+        if (requestParameters['runner_image_id'] != null) {
+            queryParameters['runner_image_id'] = requestParameters['runner_image_id'];
+        }
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-versions`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsListRunnerImageVersionsOutputFromJSON)(jsonValue));
+    }
+    /**
+     * List all runner image versions.
+     */
+    async listRunnerImageVersions(requestParameters, initOverrides) {
+        const response = await this.listRunnerImageVersionsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Update runner image version details for the id.
+     */
+    async updateRunnerImageVersionRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling updateRunnerImageVersion().');
+        }
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling updateRunnerImageVersion().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        headerParameters['Content-Type'] = 'application/json';
+        const response = await this.request({
+            path: `/runner-image-versions/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: (0, index_1.CommonsUpdateRunnerImageVersionInputToJSON)(requestParameters['body'])
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageVersionFromJSON)(jsonValue));
+    }
+    /**
+     * Update runner image version details for the id.
+     */
+    async updateRunnerImageVersion(requestParameters, initOverrides) {
+        const response = await this.updateRunnerImageVersionRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+}
+exports.V1RunnerImageVersionsApi = V1RunnerImageVersionsApi;
+
+
+/***/ }),
+
+/***/ 322:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ListRunnerImagesTypeEnum = exports.ListRunnerImagesOsEnum = exports.ListRunnerImagesArchEnum = exports.V1RunnerImagesApi = void 0;
+const runtime = __importStar(__nccwpck_require__(5989));
+const index_1 = __nccwpck_require__(5708);
+/**
+ *
+ */
+class V1RunnerImagesApi extends runtime.BaseAPI {
+    /**
+     * Create a new runner image.
+     */
+    async createRunnerImageRaw(requestParameters, initOverrides) {
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling createRunnerImage().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        headerParameters['Content-Type'] = 'application/json';
+        const response = await this.request({
+            path: `/runner-images`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: (0, index_1.CommonsCreateRunnerImageInputToJSON)(requestParameters['body'])
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageFromJSON)(jsonValue));
+    }
+    /**
+     * Create a new runner image.
+     */
+    async createRunnerImage(requestParameters, initOverrides) {
+        const response = await this.createRunnerImageRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Create a new runner image pull secret.
+     */
+    async createRunnerImagePullSecretRaw(requestParameters, initOverrides) {
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling createRunnerImagePullSecret().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        headerParameters['Content-Type'] = 'application/json';
+        const response = await this.request({
+            path: `/runner-image-pull-secrets`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: (0, index_1.CommonsCreateRunnerImagePullSecretInputToJSON)(requestParameters['body'])
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImagePullSecretFromJSON)(jsonValue));
+    }
+    /**
+     * Create a new runner image pull secret.
+     */
+    async createRunnerImagePullSecret(requestParameters, initOverrides) {
+        const response = await this.createRunnerImagePullSecretRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Delete runner image details for the id.
+     */
+    async deleteRunnerImageRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling deleteRunnerImage().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-images/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageFromJSON)(jsonValue));
+    }
+    /**
+     * Delete runner image details for the id.
+     */
+    async deleteRunnerImage(requestParameters, initOverrides) {
+        const response = await this.deleteRunnerImageRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Delete runner image pull secret details for the id.
+     */
+    async deleteRunnerImagePullSecretRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling deleteRunnerImagePullSecret().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-pull-secrets/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.TypesGenericSuccessMessageFromJSON)(jsonValue));
+    }
+    /**
+     * Delete runner image pull secret details for the id.
+     */
+    async deleteRunnerImagePullSecret(requestParameters, initOverrides) {
+        const response = await this.deleteRunnerImagePullSecretRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Get latest runner image version details for the id.
+     */
+    async getLatestRunnerImageVersionRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling getLatestRunnerImageVersion().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-images/{id}/latest-version`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageVersionFromJSON)(jsonValue));
+    }
+    /**
+     * Get latest runner image version details for the id.
+     */
+    async getLatestRunnerImageVersion(requestParameters, initOverrides) {
+        const response = await this.getLatestRunnerImageVersionRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Get runner image details for the id.
+     */
+    async getRunnerImageRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling getRunnerImage().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-images/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageFromJSON)(jsonValue));
+    }
+    /**
+     * Get runner image details for the id.
+     */
+    async getRunnerImage(requestParameters, initOverrides) {
+        const response = await this.getRunnerImageRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Get runner image pull secret details for the id.
+     */
+    async getRunnerImagePullSecretRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling getRunnerImagePullSecret().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-pull-secrets/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImagePullSecretFromJSON)(jsonValue));
+    }
+    /**
+     * Get runner image pull secret details for the id.
+     */
+    async getRunnerImagePullSecret(requestParameters, initOverrides) {
+        const response = await this.getRunnerImagePullSecretRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * List all runner image pull secrets.
+     */
+    async listRunnerImagePullSecretsRaw(initOverrides) {
+        const queryParameters = {};
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-image-pull-secrets`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsListRunnerImagePullSecretsOutputFromJSON)(jsonValue));
+    }
+    /**
+     * List all runner image pull secrets.
+     */
+    async listRunnerImagePullSecrets(initOverrides) {
+        const response = await this.listRunnerImagePullSecretsRaw(initOverrides);
+        return await response.value();
+    }
+    /**
+     * List all runner images.
+     */
+    async listRunnerImagesRaw(requestParameters, initOverrides) {
+        const queryParameters = {};
+        if (requestParameters['alias'] != null) {
+            queryParameters['alias'] = requestParameters['alias'];
+        }
+        if (requestParameters['runner_image_pull_secret_id'] != null) {
+            queryParameters['runner_image_pull_secret_id'] =
+                requestParameters['runner_image_pull_secret_id'];
+        }
+        if (requestParameters['stack_kind'] != null) {
+            queryParameters['stack_kind'] = requestParameters['stack_kind'];
+        }
+        if (requestParameters['region'] != null) {
+            queryParameters['region'] = requestParameters['region'];
+        }
+        if (requestParameters['arch'] != null) {
+            queryParameters['arch'] = requestParameters['arch'];
+        }
+        if (requestParameters['os'] != null) {
+            queryParameters['os'] = requestParameters['os'];
+        }
+        if (requestParameters['type'] != null) {
+            queryParameters['type'] = requestParameters['type'];
+        }
+        const headerParameters = {};
+        const response = await this.request({
+            path: `/runner-images`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsListRunnerImagesOutputFromJSON)(jsonValue));
+    }
+    /**
+     * List all runner images.
+     */
+    async listRunnerImages(requestParameters = {}, initOverrides) {
+        const response = await this.listRunnerImagesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Update runner image details for the id.
+     */
+    async updateRunnerImageRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling updateRunnerImage().');
+        }
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling updateRunnerImage().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        headerParameters['Content-Type'] = 'application/json';
+        const response = await this.request({
+            path: `/runner-images/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: (0, index_1.CommonsUpdateRunnerImageInputToJSON)(requestParameters['body'])
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImageFromJSON)(jsonValue));
+    }
+    /**
+     * Update runner image details for the id.
+     */
+    async updateRunnerImage(requestParameters, initOverrides) {
+        const response = await this.updateRunnerImageRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+    /**
+     * Update runner image pull secret details for the id.
+     */
+    async updateRunnerImagePullSecretRaw(requestParameters, initOverrides) {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError('id', 'Required parameter "id" was null or undefined when calling updateRunnerImagePullSecret().');
+        }
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling updateRunnerImagePullSecret().');
+        }
+        const queryParameters = {};
+        const headerParameters = {};
+        headerParameters['Content-Type'] = 'application/json';
+        const response = await this.request({
+            path: `/runner-image-pull-secrets/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: (0, index_1.CommonsUpdateRunnerImagePullSecretInputToJSON)(requestParameters['body'])
+        }, initOverrides);
+        return new runtime.JSONApiResponse(response, jsonValue => (0, index_1.CommonsRunnerImagePullSecretFromJSON)(jsonValue));
+    }
+    /**
+     * Update runner image pull secret details for the id.
+     */
+    async updateRunnerImagePullSecret(requestParameters, initOverrides) {
+        const response = await this.updateRunnerImagePullSecretRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+}
+exports.V1RunnerImagesApi = V1RunnerImagesApi;
+/**
+ * @export
+ */
+exports.ListRunnerImagesArchEnum = {
+    x64: 'x64',
+    arm64: 'arm64'
+};
+/**
+ * @export
+ */
+exports.ListRunnerImagesOsEnum = {
+    mac: 'mac',
+    ubuntu: 'ubuntu'
+};
+/**
+ * @export
+ */
+exports.ListRunnerImagesTypeEnum = {
+    container: 'container',
+    warpbuild_managed: 'warpbuild_managed',
+    warpbuild_snapshot_image: 'warpbuild_snapshot_image'
+};
+
+
+/***/ }),
+
+/***/ 6219:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/* tslint:disable */
+/* eslint-disable */
+__exportStar(__nccwpck_require__(4882), exports);
+__exportStar(__nccwpck_require__(322), exports);
+
+
+/***/ }),
+
+/***/ 4519:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/* tslint:disable */
+/* eslint-disable */
+__exportStar(__nccwpck_require__(5989), exports);
+__exportStar(__nccwpck_require__(6219), exports);
+__exportStar(__nccwpck_require__(5708), exports);
+
+
+/***/ }),
+
+/***/ 1241:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsContainerRunnerImage = instanceOfCommonsContainerRunnerImage;
+exports.CommonsContainerRunnerImageFromJSON = CommonsContainerRunnerImageFromJSON;
+exports.CommonsContainerRunnerImageFromJSONTyped = CommonsContainerRunnerImageFromJSONTyped;
+exports.CommonsContainerRunnerImageToJSON = CommonsContainerRunnerImageToJSON;
+/**
+ * Check if a given object implements the CommonsContainerRunnerImage interface.
+ */
+function instanceOfCommonsContainerRunnerImage(value) {
+    return true;
+}
+function CommonsContainerRunnerImageFromJSON(json) {
+    return CommonsContainerRunnerImageFromJSONTyped(json, false);
+}
+function CommonsContainerRunnerImageFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        args: json['args'] == null ? undefined : json['args'],
+        command: json['command'] == null ? undefined : json['command'],
+        entrypoint: json['entrypoint'] == null ? undefined : json['entrypoint'],
+        environment_variables: json['environment_variables'] == null
+            ? undefined
+            : json['environment_variables'],
+        image_repository: json['image_repository'] == null ? undefined : json['image_repository'],
+        image_tag: json['image_tag'] == null ? undefined : json['image_tag']
+    };
+}
+function CommonsContainerRunnerImageToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        args: value['args'],
+        command: value['command'],
+        entrypoint: value['entrypoint'],
+        environment_variables: value['environment_variables'],
+        image_repository: value['image_repository'],
+        image_tag: value['image_tag']
+    };
+}
+
+
+/***/ }),
+
+/***/ 752:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsContainerRunnerImageUpdate = instanceOfCommonsContainerRunnerImageUpdate;
+exports.CommonsContainerRunnerImageUpdateFromJSON = CommonsContainerRunnerImageUpdateFromJSON;
+exports.CommonsContainerRunnerImageUpdateFromJSONTyped = CommonsContainerRunnerImageUpdateFromJSONTyped;
+exports.CommonsContainerRunnerImageUpdateToJSON = CommonsContainerRunnerImageUpdateToJSON;
+/**
+ * Check if a given object implements the CommonsContainerRunnerImageUpdate interface.
+ */
+function instanceOfCommonsContainerRunnerImageUpdate(value) {
+    return true;
+}
+function CommonsContainerRunnerImageUpdateFromJSON(json) {
+    return CommonsContainerRunnerImageUpdateFromJSONTyped(json, false);
+}
+function CommonsContainerRunnerImageUpdateFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        image_tag: json['image_tag'] == null ? undefined : json['image_tag']
+    };
+}
+function CommonsContainerRunnerImageUpdateToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        image_tag: value['image_tag']
+    };
+}
+
+
+/***/ }),
+
+/***/ 9453:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsContainerRunnerImageVersion = instanceOfCommonsContainerRunnerImageVersion;
+exports.CommonsContainerRunnerImageVersionFromJSON = CommonsContainerRunnerImageVersionFromJSON;
+exports.CommonsContainerRunnerImageVersionFromJSONTyped = CommonsContainerRunnerImageVersionFromJSONTyped;
+exports.CommonsContainerRunnerImageVersionToJSON = CommonsContainerRunnerImageVersionToJSON;
+/**
+ * Check if a given object implements the CommonsContainerRunnerImageVersion interface.
+ */
+function instanceOfCommonsContainerRunnerImageVersion(value) {
+    return true;
+}
+function CommonsContainerRunnerImageVersionFromJSON(json) {
+    return CommonsContainerRunnerImageVersionFromJSONTyped(json, false);
+}
+function CommonsContainerRunnerImageVersionFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        data_dir_size: json['data_dir_size'] == null ? undefined : json['data_dir_size'],
+        image_digest: json['image_digest'] == null ? undefined : json['image_digest'],
+        image_repository: json['image_repository'] == null ? undefined : json['image_repository'],
+        image_size: json['image_size'] == null ? undefined : json['image_size'],
+        image_tag: json['image_tag'] == null ? undefined : json['image_tag'],
+        image_uri: json['image_uri'] == null ? undefined : json['image_uri'],
+        snapshot_id: json['snapshot_id'] == null ? undefined : json['snapshot_id'],
+        snapshot_size: json['snapshot_size'] == null ? undefined : json['snapshot_size'],
+        volume_id: json['volume_id'] == null ? undefined : json['volume_id'],
+        volume_size_gb: json['volume_size_gb'] == null ? undefined : json['volume_size_gb']
+    };
+}
+function CommonsContainerRunnerImageVersionToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        data_dir_size: value['data_dir_size'],
+        image_digest: value['image_digest'],
+        image_repository: value['image_repository'],
+        image_size: value['image_size'],
+        image_tag: value['image_tag'],
+        image_uri: value['image_uri'],
+        snapshot_id: value['snapshot_id'],
+        snapshot_size: value['snapshot_size'],
+        volume_id: value['volume_id'],
+        volume_size_gb: value['volume_size_gb']
+    };
+}
+
+
+/***/ }),
+
+/***/ 8213:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsCreateRunnerImageInput = instanceOfCommonsCreateRunnerImageInput;
+exports.CommonsCreateRunnerImageInputFromJSON = CommonsCreateRunnerImageInputFromJSON;
+exports.CommonsCreateRunnerImageInputFromJSONTyped = CommonsCreateRunnerImageInputFromJSONTyped;
+exports.CommonsCreateRunnerImageInputToJSON = CommonsCreateRunnerImageInputToJSON;
+const CommonsRunnerImageHook_1 = __nccwpck_require__(213);
+const CommonsRunnerImageSettings_1 = __nccwpck_require__(4392);
+const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
+const CommonsContainerRunnerImage_1 = __nccwpck_require__(1241);
+/**
+ * Check if a given object implements the CommonsCreateRunnerImageInput interface.
+ */
+function instanceOfCommonsCreateRunnerImageInput(value) {
+    return true;
+}
+function CommonsCreateRunnerImageInputFromJSON(json) {
+    return CommonsCreateRunnerImageInputFromJSONTyped(json, false);
+}
+function CommonsCreateRunnerImageInputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        alias: json['alias'] == null ? undefined : json['alias'],
+        arch: json['arch'] == null ? undefined : json['arch'],
+        container_runner_image: json['container_runner_image'] == null
+            ? undefined
+            : (0, CommonsContainerRunnerImage_1.CommonsContainerRunnerImageFromJSON)(json['container_runner_image']),
+        hooks: json['hooks'] == null
+            ? undefined
+            : json['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookFromJSON),
+        os: json['os'] == null ? undefined : json['os'],
+        runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
+            ? undefined
+            : json['runner_image_pull_secret_id'],
+        settings: json['settings'] == null
+            ? undefined
+            : (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsFromJSON)(json['settings']),
+        stack_id: json['stack_id'] == null ? undefined : json['stack_id'],
+        type: json['type'] == null ? undefined : json['type'],
+        warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageFromJSON)(json['warpbuild_snapshot_image'])
+    };
+}
+function CommonsCreateRunnerImageInputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        alias: value['alias'],
+        arch: value['arch'],
+        container_runner_image: (0, CommonsContainerRunnerImage_1.CommonsContainerRunnerImageToJSON)(value['container_runner_image']),
+        hooks: value['hooks'] == null
+            ? undefined
+            : value['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookToJSON),
+        os: value['os'],
+        runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
+        settings: (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsToJSON)(value['settings']),
+        stack_id: value['stack_id'],
+        type: value['type'],
+        warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
+    };
+}
+
+
+/***/ }),
+
+/***/ 2111:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommonsCreateRunnerImagePullSecretInputTypeEnum = void 0;
+exports.instanceOfCommonsCreateRunnerImagePullSecretInput = instanceOfCommonsCreateRunnerImagePullSecretInput;
+exports.CommonsCreateRunnerImagePullSecretInputFromJSON = CommonsCreateRunnerImagePullSecretInputFromJSON;
+exports.CommonsCreateRunnerImagePullSecretInputFromJSONTyped = CommonsCreateRunnerImagePullSecretInputFromJSONTyped;
+exports.CommonsCreateRunnerImagePullSecretInputToJSON = CommonsCreateRunnerImagePullSecretInputToJSON;
+const CommonsRunnerImagePullSecretDockerCredentials_1 = __nccwpck_require__(804);
+const CommonsRunnerImagePullSecretAWS_1 = __nccwpck_require__(7942);
+/**
+ * @export
+ */
+exports.CommonsCreateRunnerImagePullSecretInputTypeEnum = {
+    docker_credentials: 'docker_credentials',
+    aws: 'aws'
+};
+/**
+ * Check if a given object implements the CommonsCreateRunnerImagePullSecretInput interface.
+ */
+function instanceOfCommonsCreateRunnerImagePullSecretInput(value) {
+    if (!('alias' in value) || value['alias'] === undefined)
+        return false;
+    if (!('type' in value) || value['type'] === undefined)
+        return false;
+    return true;
+}
+function CommonsCreateRunnerImagePullSecretInputFromJSON(json) {
+    return CommonsCreateRunnerImagePullSecretInputFromJSONTyped(json, false);
+}
+function CommonsCreateRunnerImagePullSecretInputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        alias: json['alias'],
+        aws: json['aws'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSFromJSON)(json['aws']),
+        docker_credentials: json['docker_credentials'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsFromJSON)(json['docker_credentials']),
+        type: json['type']
+    };
+}
+function CommonsCreateRunnerImagePullSecretInputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        alias: value['alias'],
+        aws: (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSToJSON)(value['aws']),
+        docker_credentials: (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsToJSON)(value['docker_credentials']),
+        type: value['type']
+    };
+}
+
+
+/***/ }),
+
+/***/ 3641:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsListRunnerImagePullSecretsOutput = instanceOfCommonsListRunnerImagePullSecretsOutput;
+exports.CommonsListRunnerImagePullSecretsOutputFromJSON = CommonsListRunnerImagePullSecretsOutputFromJSON;
+exports.CommonsListRunnerImagePullSecretsOutputFromJSONTyped = CommonsListRunnerImagePullSecretsOutputFromJSONTyped;
+exports.CommonsListRunnerImagePullSecretsOutputToJSON = CommonsListRunnerImagePullSecretsOutputToJSON;
+const CommonsRunnerImagePullSecret_1 = __nccwpck_require__(7219);
+/**
+ * Check if a given object implements the CommonsListRunnerImagePullSecretsOutput interface.
+ */
+function instanceOfCommonsListRunnerImagePullSecretsOutput(value) {
+    return true;
+}
+function CommonsListRunnerImagePullSecretsOutputFromJSON(json) {
+    return CommonsListRunnerImagePullSecretsOutputFromJSONTyped(json, false);
+}
+function CommonsListRunnerImagePullSecretsOutputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        runner_image_pull_secrets: json['runner_image_pull_secrets'] == null
+            ? undefined
+            : json['runner_image_pull_secrets'].map(CommonsRunnerImagePullSecret_1.CommonsRunnerImagePullSecretFromJSON)
+    };
+}
+function CommonsListRunnerImagePullSecretsOutputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        runner_image_pull_secrets: value['runner_image_pull_secrets'] == null
+            ? undefined
+            : value['runner_image_pull_secrets'].map(CommonsRunnerImagePullSecret_1.CommonsRunnerImagePullSecretToJSON)
+    };
+}
+
+
+/***/ }),
+
+/***/ 3670:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsListRunnerImageVersionsOutput = instanceOfCommonsListRunnerImageVersionsOutput;
+exports.CommonsListRunnerImageVersionsOutputFromJSON = CommonsListRunnerImageVersionsOutputFromJSON;
+exports.CommonsListRunnerImageVersionsOutputFromJSONTyped = CommonsListRunnerImageVersionsOutputFromJSONTyped;
+exports.CommonsListRunnerImageVersionsOutputToJSON = CommonsListRunnerImageVersionsOutputToJSON;
+const CommonsRunnerImageVersion_1 = __nccwpck_require__(3446);
+/**
+ * Check if a given object implements the CommonsListRunnerImageVersionsOutput interface.
+ */
+function instanceOfCommonsListRunnerImageVersionsOutput(value) {
+    return true;
+}
+function CommonsListRunnerImageVersionsOutputFromJSON(json) {
+    return CommonsListRunnerImageVersionsOutputFromJSONTyped(json, false);
+}
+function CommonsListRunnerImageVersionsOutputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        runner_image_versions: json['runner_image_versions'] == null
+            ? undefined
+            : json['runner_image_versions'].map(CommonsRunnerImageVersion_1.CommonsRunnerImageVersionFromJSON)
+    };
+}
+function CommonsListRunnerImageVersionsOutputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        runner_image_versions: value['runner_image_versions'] == null
+            ? undefined
+            : value['runner_image_versions'].map(CommonsRunnerImageVersion_1.CommonsRunnerImageVersionToJSON)
+    };
+}
+
+
+/***/ }),
+
+/***/ 2950:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsListRunnerImagesOutput = instanceOfCommonsListRunnerImagesOutput;
+exports.CommonsListRunnerImagesOutputFromJSON = CommonsListRunnerImagesOutputFromJSON;
+exports.CommonsListRunnerImagesOutputFromJSONTyped = CommonsListRunnerImagesOutputFromJSONTyped;
+exports.CommonsListRunnerImagesOutputToJSON = CommonsListRunnerImagesOutputToJSON;
+const CommonsRunnerImage_1 = __nccwpck_require__(6413);
+/**
+ * Check if a given object implements the CommonsListRunnerImagesOutput interface.
+ */
+function instanceOfCommonsListRunnerImagesOutput(value) {
+    if (!('runner_images' in value) || value['runner_images'] === undefined)
+        return false;
+    return true;
+}
+function CommonsListRunnerImagesOutputFromJSON(json) {
+    return CommonsListRunnerImagesOutputFromJSONTyped(json, false);
+}
+function CommonsListRunnerImagesOutputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        runner_images: json['runner_images'].map(CommonsRunnerImage_1.CommonsRunnerImageFromJSON)
+    };
+}
+function CommonsListRunnerImagesOutputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        runner_images: value['runner_images'].map(CommonsRunnerImage_1.CommonsRunnerImageToJSON)
+    };
+}
+
+
+/***/ }),
+
+/***/ 6413:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommonsRunnerImageTypeEnum = exports.CommonsRunnerImageStatusEnum = void 0;
+exports.instanceOfCommonsRunnerImage = instanceOfCommonsRunnerImage;
+exports.CommonsRunnerImageFromJSON = CommonsRunnerImageFromJSON;
+exports.CommonsRunnerImageFromJSONTyped = CommonsRunnerImageFromJSONTyped;
+exports.CommonsRunnerImageToJSON = CommonsRunnerImageToJSON;
+const CommonsRunnerImageHook_1 = __nccwpck_require__(213);
+const CommonsWarpbuildImage_1 = __nccwpck_require__(4891);
+const CommonsRunnerImageSettings_1 = __nccwpck_require__(4392);
+const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
+const CommonsContainerRunnerImage_1 = __nccwpck_require__(1241);
+const CommonsRunnerImageVersion_1 = __nccwpck_require__(3446);
+/**
+ * @export
+ */
+exports.CommonsRunnerImageStatusEnum = {
+    creating: 'creating',
+    updating: 'updating',
+    deleting: 'deleting',
+    available: 'available',
+    failed: 'failed'
+};
+/**
+ * @export
+ */
+exports.CommonsRunnerImageTypeEnum = {
+    container: 'container',
+    warpbuild_managed: 'warpbuild_managed',
+    warpbuild_snapshot_image: 'warpbuild_snapshot_image'
+};
+/**
+ * Check if a given object implements the CommonsRunnerImage interface.
+ */
+function instanceOfCommonsRunnerImage(value) {
+    if (!('id' in value) || value['id'] === undefined)
+        return false;
+    return true;
+}
+function CommonsRunnerImageFromJSON(json) {
+    return CommonsRunnerImageFromJSONTyped(json, false);
+}
+function CommonsRunnerImageFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        alias: json['alias'] == null ? undefined : json['alias'],
+        arch: json['arch'] == null ? undefined : json['arch'],
+        container_runner_image: json['container_runner_image'] == null
+            ? undefined
+            : (0, CommonsContainerRunnerImage_1.CommonsContainerRunnerImageFromJSON)(json['container_runner_image']),
+        created_at: json['created_at'] == null ? undefined : json['created_at'],
+        hooks: json['hooks'] == null
+            ? undefined
+            : json['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookFromJSON),
+        id: json['id'],
+        organization_id: json['organization_id'] == null ? undefined : json['organization_id'],
+        os: json['os'] == null ? undefined : json['os'],
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+        root_parent_image_id: json['root_parent_image_id'] == null
+            ? undefined
+            : json['root_parent_image_id'],
+        runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
+            ? undefined
+            : json['runner_image_pull_secret_id'],
+        settings: json['settings'] == null
+            ? undefined
+            : (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsFromJSON)(json['settings']),
+        stack_id: json['stack_id'] == null ? undefined : json['stack_id'],
+        status: json['status'] == null ? undefined : json['status'],
+        type: json['type'] == null ? undefined : json['type'],
+        updated_at: json['updated_at'] == null ? undefined : json['updated_at'],
+        version: json['version'] == null
+            ? undefined
+            : (0, CommonsRunnerImageVersion_1.CommonsRunnerImageVersionFromJSON)(json['version']),
+        warpbuild_image: json['warpbuild_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildImage_1.CommonsWarpbuildImageFromJSON)(json['warpbuild_image']),
+        warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageFromJSON)(json['warpbuild_snapshot_image'])
+    };
+}
+function CommonsRunnerImageToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        alias: value['alias'],
+        arch: value['arch'],
+        container_runner_image: (0, CommonsContainerRunnerImage_1.CommonsContainerRunnerImageToJSON)(value['container_runner_image']),
+        created_at: value['created_at'],
+        hooks: value['hooks'] == null
+            ? undefined
+            : value['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookToJSON),
+        id: value['id'],
+        organization_id: value['organization_id'],
+        os: value['os'],
+        parent_image_id: value['parent_image_id'],
+        root_parent_image_id: value['root_parent_image_id'],
+        runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
+        settings: (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsToJSON)(value['settings']),
+        stack_id: value['stack_id'],
+        status: value['status'],
+        type: value['type'],
+        updated_at: value['updated_at'],
+        version: (0, CommonsRunnerImageVersion_1.CommonsRunnerImageVersionToJSON)(value['version']),
+        warpbuild_image: (0, CommonsWarpbuildImage_1.CommonsWarpbuildImageToJSON)(value['warpbuild_image']),
+        warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
+    };
+}
+
+
+/***/ }),
+
+/***/ 213:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommonsRunnerImageHookTypeEnum = void 0;
+exports.instanceOfCommonsRunnerImageHook = instanceOfCommonsRunnerImageHook;
+exports.CommonsRunnerImageHookFromJSON = CommonsRunnerImageHookFromJSON;
+exports.CommonsRunnerImageHookFromJSONTyped = CommonsRunnerImageHookFromJSONTyped;
+exports.CommonsRunnerImageHookToJSON = CommonsRunnerImageHookToJSON;
+/**
+ * @export
+ */
+exports.CommonsRunnerImageHookTypeEnum = {
+    prehook: 'github_prehook',
+    posthook: 'github_posthook'
+};
+/**
+ * Check if a given object implements the CommonsRunnerImageHook interface.
+ */
+function instanceOfCommonsRunnerImageHook(value) {
+    return true;
+}
+function CommonsRunnerImageHookFromJSON(json) {
+    return CommonsRunnerImageHookFromJSONTyped(json, false);
+}
+function CommonsRunnerImageHookFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        file: json['file'] == null ? undefined : json['file'],
+        type: json['type'] == null ? undefined : json['type']
+    };
+}
+function CommonsRunnerImageHookToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        file: value['file'],
+        type: value['type']
+    };
+}
+
+
+/***/ }),
+
+/***/ 7219:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommonsRunnerImagePullSecretTypeEnum = void 0;
+exports.instanceOfCommonsRunnerImagePullSecret = instanceOfCommonsRunnerImagePullSecret;
+exports.CommonsRunnerImagePullSecretFromJSON = CommonsRunnerImagePullSecretFromJSON;
+exports.CommonsRunnerImagePullSecretFromJSONTyped = CommonsRunnerImagePullSecretFromJSONTyped;
+exports.CommonsRunnerImagePullSecretToJSON = CommonsRunnerImagePullSecretToJSON;
+const CommonsRunnerImagePullSecretDockerCredentials_1 = __nccwpck_require__(804);
+const CommonsRunnerImagePullSecretAWS_1 = __nccwpck_require__(7942);
+/**
+ * @export
+ */
+exports.CommonsRunnerImagePullSecretTypeEnum = {
+    docker_credentials: 'docker_credentials',
+    aws: 'aws'
+};
+/**
+ * Check if a given object implements the CommonsRunnerImagePullSecret interface.
+ */
+function instanceOfCommonsRunnerImagePullSecret(value) {
+    if (!('alias' in value) || value['alias'] === undefined)
+        return false;
+    if (!('created_at' in value) || value['created_at'] === undefined)
+        return false;
+    if (!('id' in value) || value['id'] === undefined)
+        return false;
+    if (!('organization_id' in value) || value['organization_id'] === undefined)
+        return false;
+    if (!('type' in value) || value['type'] === undefined)
+        return false;
+    if (!('updated_at' in value) || value['updated_at'] === undefined)
+        return false;
+    return true;
+}
+function CommonsRunnerImagePullSecretFromJSON(json) {
+    return CommonsRunnerImagePullSecretFromJSONTyped(json, false);
+}
+function CommonsRunnerImagePullSecretFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        alias: json['alias'],
+        aws: json['aws'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSFromJSON)(json['aws']),
+        created_at: json['created_at'],
+        docker_credentials: json['docker_credentials'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsFromJSON)(json['docker_credentials']),
+        id: json['id'],
+        organization_id: json['organization_id'],
+        type: json['type'],
+        updated_at: json['updated_at']
+    };
+}
+function CommonsRunnerImagePullSecretToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        alias: value['alias'],
+        aws: (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSToJSON)(value['aws']),
+        created_at: value['created_at'],
+        docker_credentials: (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsToJSON)(value['docker_credentials']),
+        id: value['id'],
+        organization_id: value['organization_id'],
+        type: value['type'],
+        updated_at: value['updated_at']
+    };
+}
+
+
+/***/ }),
+
+/***/ 7942:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsRunnerImagePullSecretAWS = instanceOfCommonsRunnerImagePullSecretAWS;
+exports.CommonsRunnerImagePullSecretAWSFromJSON = CommonsRunnerImagePullSecretAWSFromJSON;
+exports.CommonsRunnerImagePullSecretAWSFromJSONTyped = CommonsRunnerImagePullSecretAWSFromJSONTyped;
+exports.CommonsRunnerImagePullSecretAWSToJSON = CommonsRunnerImagePullSecretAWSToJSON;
+/**
+ * Check if a given object implements the CommonsRunnerImagePullSecretAWS interface.
+ */
+function instanceOfCommonsRunnerImagePullSecretAWS(value) {
+    if (!('access_key_id' in value) || value['access_key_id'] === undefined)
+        return false;
+    if (!('region' in value) || value['region'] === undefined)
+        return false;
+    if (!('secret_access_key' in value) ||
+        value['secret_access_key'] === undefined)
+        return false;
+    return true;
+}
+function CommonsRunnerImagePullSecretAWSFromJSON(json) {
+    return CommonsRunnerImagePullSecretAWSFromJSONTyped(json, false);
+}
+function CommonsRunnerImagePullSecretAWSFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        access_key_id: json['access_key_id'],
+        region: json['region'],
+        secret_access_key: json['secret_access_key']
+    };
+}
+function CommonsRunnerImagePullSecretAWSToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        access_key_id: value['access_key_id'],
+        region: value['region'],
+        secret_access_key: value['secret_access_key']
+    };
+}
+
+
+/***/ }),
+
+/***/ 804:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsRunnerImagePullSecretDockerCredentials = instanceOfCommonsRunnerImagePullSecretDockerCredentials;
+exports.CommonsRunnerImagePullSecretDockerCredentialsFromJSON = CommonsRunnerImagePullSecretDockerCredentialsFromJSON;
+exports.CommonsRunnerImagePullSecretDockerCredentialsFromJSONTyped = CommonsRunnerImagePullSecretDockerCredentialsFromJSONTyped;
+exports.CommonsRunnerImagePullSecretDockerCredentialsToJSON = CommonsRunnerImagePullSecretDockerCredentialsToJSON;
+/**
+ * Check if a given object implements the CommonsRunnerImagePullSecretDockerCredentials interface.
+ */
+function instanceOfCommonsRunnerImagePullSecretDockerCredentials(value) {
+    if (!('host' in value) || value['host'] === undefined)
+        return false;
+    if (!('password' in value) || value['password'] === undefined)
+        return false;
+    if (!('username' in value) || value['username'] === undefined)
+        return false;
+    return true;
+}
+function CommonsRunnerImagePullSecretDockerCredentialsFromJSON(json) {
+    return CommonsRunnerImagePullSecretDockerCredentialsFromJSONTyped(json, false);
+}
+function CommonsRunnerImagePullSecretDockerCredentialsFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        host: json['host'],
+        password: json['password'],
+        username: json['username']
+    };
+}
+function CommonsRunnerImagePullSecretDockerCredentialsToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        host: value['host'],
+        password: value['password'],
+        username: value['username']
+    };
+}
+
+
+/***/ }),
+
+/***/ 4392:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsRunnerImageSettings = instanceOfCommonsRunnerImageSettings;
+exports.CommonsRunnerImageSettingsFromJSON = CommonsRunnerImageSettingsFromJSON;
+exports.CommonsRunnerImageSettingsFromJSONTyped = CommonsRunnerImageSettingsFromJSONTyped;
+exports.CommonsRunnerImageSettingsToJSON = CommonsRunnerImageSettingsToJSON;
+/**
+ * Check if a given object implements the CommonsRunnerImageSettings interface.
+ */
+function instanceOfCommonsRunnerImageSettings(value) {
+    return true;
+}
+function CommonsRunnerImageSettingsFromJSON(json) {
+    return CommonsRunnerImageSettingsFromJSONTyped(json, false);
+}
+function CommonsRunnerImageSettingsFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        purge_image_versions_offset: json['purge_image_versions_offset'] == null
+            ? undefined
+            : json['purge_image_versions_offset']
+    };
+}
+function CommonsRunnerImageSettingsToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        purge_image_versions_offset: value['purge_image_versions_offset']
+    };
+}
+
+
+/***/ }),
+
+/***/ 3446:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsRunnerImageVersion = instanceOfCommonsRunnerImageVersion;
+exports.CommonsRunnerImageVersionFromJSON = CommonsRunnerImageVersionFromJSON;
+exports.CommonsRunnerImageVersionFromJSONTyped = CommonsRunnerImageVersionFromJSONTyped;
+exports.CommonsRunnerImageVersionToJSON = CommonsRunnerImageVersionToJSON;
+const CommonsContainerRunnerImageVersion_1 = __nccwpck_require__(9453);
+const CommonsRunnerImageVersionMeta_1 = __nccwpck_require__(686);
+/**
+ * Check if a given object implements the CommonsRunnerImageVersion interface.
+ */
+function instanceOfCommonsRunnerImageVersion(value) {
+    return true;
+}
+function CommonsRunnerImageVersionFromJSON(json) {
+    return CommonsRunnerImageVersionFromJSONTyped(json, false);
+}
+function CommonsRunnerImageVersionFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        arch: json['arch'] == null ? undefined : json['arch'],
+        container_runner_image: json['container_runner_image'] == null
+            ? undefined
+            : (0, CommonsContainerRunnerImageVersion_1.CommonsContainerRunnerImageVersionFromJSON)(json['container_runner_image']),
+        created_at: json['created_at'] == null ? undefined : json['created_at'],
+        external_id: json['external_id'] == null ? undefined : json['external_id'],
+        id: json['id'] == null ? undefined : json['id'],
+        meta: json['meta'] == null
+            ? undefined
+            : (0, CommonsRunnerImageVersionMeta_1.CommonsRunnerImageVersionMetaFromJSON)(json['meta']),
+        organization_id: json['organization_id'] == null ? undefined : json['organization_id'],
+        os: json['os'] == null ? undefined : json['os'],
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+        root_parent_image_id: json['root_parent_image_id'] == null
+            ? undefined
+            : json['root_parent_image_id'],
+        runner_image_id: json['runner_image_id'] == null ? undefined : json['runner_image_id'],
+        runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
+            ? undefined
+            : json['runner_image_pull_secret_id'],
+        stack_id: json['stack_id'] == null ? undefined : json['stack_id'],
+        status: json['status'] == null ? undefined : json['status'],
+        type: json['type'] == null ? undefined : json['type'],
+        updated_at: json['updated_at'] == null ? undefined : json['updated_at'],
+        version_time_id: json['version_time_id'] == null ? undefined : json['version_time_id']
+    };
+}
+function CommonsRunnerImageVersionToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        arch: value['arch'],
+        container_runner_image: (0, CommonsContainerRunnerImageVersion_1.CommonsContainerRunnerImageVersionToJSON)(value['container_runner_image']),
+        created_at: value['created_at'],
+        external_id: value['external_id'],
+        id: value['id'],
+        meta: (0, CommonsRunnerImageVersionMeta_1.CommonsRunnerImageVersionMetaToJSON)(value['meta']),
+        organization_id: value['organization_id'],
+        os: value['os'],
+        parent_image_id: value['parent_image_id'],
+        root_parent_image_id: value['root_parent_image_id'],
+        runner_image_id: value['runner_image_id'],
+        runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
+        stack_id: value['stack_id'],
+        status: value['status'],
+        type: value['type'],
+        updated_at: value['updated_at'],
+        version_time_id: value['version_time_id']
+    };
+}
+
+
+/***/ }),
+
+/***/ 686:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsRunnerImageVersionMeta = instanceOfCommonsRunnerImageVersionMeta;
+exports.CommonsRunnerImageVersionMetaFromJSON = CommonsRunnerImageVersionMetaFromJSON;
+exports.CommonsRunnerImageVersionMetaFromJSONTyped = CommonsRunnerImageVersionMetaFromJSONTyped;
+exports.CommonsRunnerImageVersionMetaToJSON = CommonsRunnerImageVersionMetaToJSON;
+/**
+ * Check if a given object implements the CommonsRunnerImageVersionMeta interface.
+ */
+function instanceOfCommonsRunnerImageVersionMeta(value) {
+    return true;
+}
+function CommonsRunnerImageVersionMetaFromJSON(json) {
+    return CommonsRunnerImageVersionMetaFromJSONTyped(json, false);
+}
+function CommonsRunnerImageVersionMetaFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        event: json['event'] == null ? undefined : json['event'],
+        parsed_event: json['parsed_event'] == null ? undefined : json['parsed_event']
+    };
+}
+function CommonsRunnerImageVersionMetaToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        event: value['event'],
+        parsed_event: value['parsed_event']
+    };
+}
+
+
+/***/ }),
+
+/***/ 5339:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsUpdateContainerRunnerImageVersion = instanceOfCommonsUpdateContainerRunnerImageVersion;
+exports.CommonsUpdateContainerRunnerImageVersionFromJSON = CommonsUpdateContainerRunnerImageVersionFromJSON;
+exports.CommonsUpdateContainerRunnerImageVersionFromJSONTyped = CommonsUpdateContainerRunnerImageVersionFromJSONTyped;
+exports.CommonsUpdateContainerRunnerImageVersionToJSON = CommonsUpdateContainerRunnerImageVersionToJSON;
+/**
+ * Check if a given object implements the CommonsUpdateContainerRunnerImageVersion interface.
+ */
+function instanceOfCommonsUpdateContainerRunnerImageVersion(value) {
+    return true;
+}
+function CommonsUpdateContainerRunnerImageVersionFromJSON(json) {
+    return CommonsUpdateContainerRunnerImageVersionFromJSONTyped(json, false);
+}
+function CommonsUpdateContainerRunnerImageVersionFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        data_dir_size: json['data_dir_size'] == null ? undefined : json['data_dir_size'],
+        image_digest: json['image_digest'] == null ? undefined : json['image_digest'],
+        image_size: json['image_size'] == null ? undefined : json['image_size'],
+        snapshot_id: json['snapshot_id'] == null ? undefined : json['snapshot_id'],
+        snapshot_size: json['snapshot_size'] == null ? undefined : json['snapshot_size'],
+        volume_id: json['volume_id'] == null ? undefined : json['volume_id'],
+        volume_size_gb: json['volume_size_gb'] == null ? undefined : json['volume_size_gb']
+    };
+}
+function CommonsUpdateContainerRunnerImageVersionToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        data_dir_size: value['data_dir_size'],
+        image_digest: value['image_digest'],
+        image_size: value['image_size'],
+        snapshot_id: value['snapshot_id'],
+        snapshot_size: value['snapshot_size'],
+        volume_id: value['volume_id'],
+        volume_size_gb: value['volume_size_gb']
+    };
+}
+
+
+/***/ }),
+
+/***/ 9303:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsUpdateRunnerImageInput = instanceOfCommonsUpdateRunnerImageInput;
+exports.CommonsUpdateRunnerImageInputFromJSON = CommonsUpdateRunnerImageInputFromJSON;
+exports.CommonsUpdateRunnerImageInputFromJSONTyped = CommonsUpdateRunnerImageInputFromJSONTyped;
+exports.CommonsUpdateRunnerImageInputToJSON = CommonsUpdateRunnerImageInputToJSON;
+const CommonsRunnerImageHook_1 = __nccwpck_require__(213);
+const CommonsContainerRunnerImageUpdate_1 = __nccwpck_require__(752);
+const CommonsRunnerImageSettings_1 = __nccwpck_require__(4392);
+const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
+/**
+ * Check if a given object implements the CommonsUpdateRunnerImageInput interface.
+ */
+function instanceOfCommonsUpdateRunnerImageInput(value) {
+    return true;
+}
+function CommonsUpdateRunnerImageInputFromJSON(json) {
+    return CommonsUpdateRunnerImageInputFromJSONTyped(json, false);
+}
+function CommonsUpdateRunnerImageInputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        container_runner_image: json['container_runner_image'] == null
+            ? undefined
+            : (0, CommonsContainerRunnerImageUpdate_1.CommonsContainerRunnerImageUpdateFromJSON)(json['container_runner_image']),
+        hooks: json['hooks'] == null
+            ? undefined
+            : json['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookFromJSON),
+        id: json['id'] == null ? undefined : json['id'],
+        runner_image_pull_secret_id: json['runner_image_pull_secret_id'] == null
+            ? undefined
+            : json['runner_image_pull_secret_id'],
+        settings: json['settings'] == null
+            ? undefined
+            : (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsFromJSON)(json['settings']),
+        warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageFromJSON)(json['warpbuild_snapshot_image'])
+    };
+}
+function CommonsUpdateRunnerImageInputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        container_runner_image: (0, CommonsContainerRunnerImageUpdate_1.CommonsContainerRunnerImageUpdateToJSON)(value['container_runner_image']),
+        hooks: value['hooks'] == null
+            ? undefined
+            : value['hooks'].map(CommonsRunnerImageHook_1.CommonsRunnerImageHookToJSON),
+        id: value['id'],
+        runner_image_pull_secret_id: value['runner_image_pull_secret_id'],
+        settings: (0, CommonsRunnerImageSettings_1.CommonsRunnerImageSettingsToJSON)(value['settings']),
+        warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
+    };
+}
+
+
+/***/ }),
+
+/***/ 2939:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsUpdateRunnerImagePullSecretInput = instanceOfCommonsUpdateRunnerImagePullSecretInput;
+exports.CommonsUpdateRunnerImagePullSecretInputFromJSON = CommonsUpdateRunnerImagePullSecretInputFromJSON;
+exports.CommonsUpdateRunnerImagePullSecretInputFromJSONTyped = CommonsUpdateRunnerImagePullSecretInputFromJSONTyped;
+exports.CommonsUpdateRunnerImagePullSecretInputToJSON = CommonsUpdateRunnerImagePullSecretInputToJSON;
+const CommonsRunnerImagePullSecretDockerCredentials_1 = __nccwpck_require__(804);
+const CommonsRunnerImagePullSecretAWS_1 = __nccwpck_require__(7942);
+/**
+ * Check if a given object implements the CommonsUpdateRunnerImagePullSecretInput interface.
+ */
+function instanceOfCommonsUpdateRunnerImagePullSecretInput(value) {
+    return true;
+}
+function CommonsUpdateRunnerImagePullSecretInputFromJSON(json) {
+    return CommonsUpdateRunnerImagePullSecretInputFromJSONTyped(json, false);
+}
+function CommonsUpdateRunnerImagePullSecretInputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        aws: json['aws'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSFromJSON)(json['aws']),
+        docker_credentials: json['docker_credentials'] == null
+            ? undefined
+            : (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsFromJSON)(json['docker_credentials'])
+    };
+}
+function CommonsUpdateRunnerImagePullSecretInputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        aws: (0, CommonsRunnerImagePullSecretAWS_1.CommonsRunnerImagePullSecretAWSToJSON)(value['aws']),
+        docker_credentials: (0, CommonsRunnerImagePullSecretDockerCredentials_1.CommonsRunnerImagePullSecretDockerCredentialsToJSON)(value['docker_credentials'])
+    };
+}
+
+
+/***/ }),
+
+/***/ 9720:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsUpdateRunnerImageVersionInput = instanceOfCommonsUpdateRunnerImageVersionInput;
+exports.CommonsUpdateRunnerImageVersionInputFromJSON = CommonsUpdateRunnerImageVersionInputFromJSON;
+exports.CommonsUpdateRunnerImageVersionInputFromJSONTyped = CommonsUpdateRunnerImageVersionInputFromJSONTyped;
+exports.CommonsUpdateRunnerImageVersionInputToJSON = CommonsUpdateRunnerImageVersionInputToJSON;
+const CommonsUpdateContainerRunnerImageVersion_1 = __nccwpck_require__(5339);
+const CommonsWarpbuildSnapshotImage_1 = __nccwpck_require__(292);
+/**
+ * Check if a given object implements the CommonsUpdateRunnerImageVersionInput interface.
+ */
+function instanceOfCommonsUpdateRunnerImageVersionInput(value) {
+    return true;
+}
+function CommonsUpdateRunnerImageVersionInputFromJSON(json) {
+    return CommonsUpdateRunnerImageVersionInputFromJSONTyped(json, false);
+}
+function CommonsUpdateRunnerImageVersionInputFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        container_runner_image_version: json['container_runner_image_version'] == null
+            ? undefined
+            : (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionFromJSON)(json['container_runner_image_version']),
+        parent_image_id: json['parent_image_id'] == null ? undefined : json['parent_image_id'],
+        status: json['status'] == null ? undefined : json['status'],
+        warpbuild_snapshot_image: json['warpbuild_snapshot_image'] == null
+            ? undefined
+            : (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageFromJSON)(json['warpbuild_snapshot_image'])
+    };
+}
+function CommonsUpdateRunnerImageVersionInputToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        container_runner_image_version: (0, CommonsUpdateContainerRunnerImageVersion_1.CommonsUpdateContainerRunnerImageVersionToJSON)(value['container_runner_image_version']),
+        parent_image_id: value['parent_image_id'],
+        status: value['status'],
+        warpbuild_snapshot_image: (0, CommonsWarpbuildSnapshotImage_1.CommonsWarpbuildSnapshotImageToJSON)(value['warpbuild_snapshot_image'])
+    };
+}
+
+
+/***/ }),
+
+/***/ 4891:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsWarpbuildImage = instanceOfCommonsWarpbuildImage;
+exports.CommonsWarpbuildImageFromJSON = CommonsWarpbuildImageFromJSON;
+exports.CommonsWarpbuildImageFromJSONTyped = CommonsWarpbuildImageFromJSONTyped;
+exports.CommonsWarpbuildImageToJSON = CommonsWarpbuildImageToJSON;
+/**
+ * Check if a given object implements the CommonsWarpbuildImage interface.
+ */
+function instanceOfCommonsWarpbuildImage(value) {
+    return true;
+}
+function CommonsWarpbuildImageFromJSON(json) {
+    return CommonsWarpbuildImageFromJSONTyped(json, false);
+}
+function CommonsWarpbuildImageFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        cloud_init_template: json['cloud_init_template'] == null
+            ? undefined
+            : json['cloud_init_template'],
+        image_uri: json['image_uri'] == null ? undefined : json['image_uri']
+    };
+}
+function CommonsWarpbuildImageToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        cloud_init_template: value['cloud_init_template'],
+        image_uri: value['image_uri']
+    };
+}
+
+
+/***/ }),
+
+/***/ 292:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfCommonsWarpbuildSnapshotImage = instanceOfCommonsWarpbuildSnapshotImage;
+exports.CommonsWarpbuildSnapshotImageFromJSON = CommonsWarpbuildSnapshotImageFromJSON;
+exports.CommonsWarpbuildSnapshotImageFromJSONTyped = CommonsWarpbuildSnapshotImageFromJSONTyped;
+exports.CommonsWarpbuildSnapshotImageToJSON = CommonsWarpbuildSnapshotImageToJSON;
+/**
+ * Check if a given object implements the CommonsWarpbuildSnapshotImage interface.
+ */
+function instanceOfCommonsWarpbuildSnapshotImage(value) {
+    return true;
+}
+function CommonsWarpbuildSnapshotImageFromJSON(json) {
+    return CommonsWarpbuildSnapshotImageFromJSONTyped(json, false);
+}
+function CommonsWarpbuildSnapshotImageFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        ami_id: json['ami_id'] == null ? undefined : json['ami_id'],
+        creator_runner_instance_id: json['creator_runner_instance_id'] == null
+            ? undefined
+            : json['creator_runner_instance_id'],
+        provider: json['provider'] == null ? undefined : json['provider'],
+        snapshot_id: json['snapshot_id'] == null ? undefined : json['snapshot_id'],
+        vcs_organization_name: json['vcs_organization_name'] == null
+            ? undefined
+            : json['vcs_organization_name'],
+        vcs_repository_name: json['vcs_repository_name'] == null
+            ? undefined
+            : json['vcs_repository_name'],
+        version_id: json['version_id'] == null ? undefined : json['version_id']
+    };
+}
+function CommonsWarpbuildSnapshotImageToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        ami_id: value['ami_id'],
+        creator_runner_instance_id: value['creator_runner_instance_id'],
+        provider: value['provider'],
+        snapshot_id: value['snapshot_id'],
+        vcs_organization_name: value['vcs_organization_name'],
+        vcs_repository_name: value['vcs_repository_name'],
+        version_id: value['version_id']
+    };
+}
+
+
+/***/ }),
+
+/***/ 5095:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfTypesGenericSuccessMessage = instanceOfTypesGenericSuccessMessage;
+exports.TypesGenericSuccessMessageFromJSON = TypesGenericSuccessMessageFromJSON;
+exports.TypesGenericSuccessMessageFromJSONTyped = TypesGenericSuccessMessageFromJSONTyped;
+exports.TypesGenericSuccessMessageToJSON = TypesGenericSuccessMessageToJSON;
+/**
+ * Check if a given object implements the TypesGenericSuccessMessage interface.
+ */
+function instanceOfTypesGenericSuccessMessage(value) {
+    return true;
+}
+function TypesGenericSuccessMessageFromJSON(json) {
+    return TypesGenericSuccessMessageFromJSONTyped(json, false);
+}
+function TypesGenericSuccessMessageFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        message: json['message'] == null ? undefined : json['message']
+    };
+}
+function TypesGenericSuccessMessageToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        message: value['message']
+    };
+}
+
+
+/***/ }),
+
+/***/ 4180:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.instanceOfWarpBuildAPIError = instanceOfWarpBuildAPIError;
+exports.WarpBuildAPIErrorFromJSON = WarpBuildAPIErrorFromJSON;
+exports.WarpBuildAPIErrorFromJSONTyped = WarpBuildAPIErrorFromJSONTyped;
+exports.WarpBuildAPIErrorToJSON = WarpBuildAPIErrorToJSON;
+/**
+ * Check if a given object implements the WarpBuildAPIError interface.
+ */
+function instanceOfWarpBuildAPIError(value) {
+    return true;
+}
+function WarpBuildAPIErrorFromJSON(json) {
+    return WarpBuildAPIErrorFromJSONTyped(json, false);
+}
+function WarpBuildAPIErrorFromJSONTyped(json, ignoreDiscriminator) {
+    if (json == null) {
+        return json;
+    }
+    return {
+        code: json['code'] == null ? undefined : json['code'],
+        description: json['description'] == null ? undefined : json['description'],
+        message: json['message'] == null ? undefined : json['message'],
+        sub_code: json['sub_code'] == null ? undefined : json['sub_code'],
+        sub_message: json['sub_message'] == null ? undefined : json['sub_message']
+    };
+}
+function WarpBuildAPIErrorToJSON(value) {
+    if (value == null) {
+        return value;
+    }
+    return {
+        code: value['code'],
+        description: value['description'],
+        message: value['message'],
+        sub_code: value['sub_code'],
+        sub_message: value['sub_message']
+    };
+}
+
+
+/***/ }),
+
+/***/ 5708:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/* tslint:disable */
+/* eslint-disable */
+__exportStar(__nccwpck_require__(1241), exports);
+__exportStar(__nccwpck_require__(752), exports);
+__exportStar(__nccwpck_require__(9453), exports);
+__exportStar(__nccwpck_require__(8213), exports);
+__exportStar(__nccwpck_require__(2111), exports);
+__exportStar(__nccwpck_require__(3641), exports);
+__exportStar(__nccwpck_require__(3670), exports);
+__exportStar(__nccwpck_require__(2950), exports);
+__exportStar(__nccwpck_require__(6413), exports);
+__exportStar(__nccwpck_require__(213), exports);
+__exportStar(__nccwpck_require__(7219), exports);
+__exportStar(__nccwpck_require__(7942), exports);
+__exportStar(__nccwpck_require__(804), exports);
+__exportStar(__nccwpck_require__(4392), exports);
+__exportStar(__nccwpck_require__(3446), exports);
+__exportStar(__nccwpck_require__(686), exports);
+__exportStar(__nccwpck_require__(5339), exports);
+__exportStar(__nccwpck_require__(9303), exports);
+__exportStar(__nccwpck_require__(2939), exports);
+__exportStar(__nccwpck_require__(9720), exports);
+__exportStar(__nccwpck_require__(4891), exports);
+__exportStar(__nccwpck_require__(292), exports);
+__exportStar(__nccwpck_require__(5095), exports);
+__exportStar(__nccwpck_require__(4180), exports);
+
+
+/***/ }),
+
+/***/ 5989:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/* tslint:disable */
+/* eslint-disable */
+/**
+ * Warp Builds API Docs
+ * This is the docs for warp builds api for argonaut
+ *
+ * The version of the OpenAPI document: 0.4.0
+ * Contact: support@swagger.io
+ *
+ * NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
+ * https://openapi-generator.tech
+ * Do not edit the class manually.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TextApiResponse = exports.BlobApiResponse = exports.VoidApiResponse = exports.JSONApiResponse = exports.COLLECTION_FORMATS = exports.RequiredError = exports.FetchError = exports.ResponseError = exports.BaseAPI = exports.DefaultConfig = exports.Configuration = exports.BASE_PATH = void 0;
+exports.querystring = querystring;
+exports.mapValues = mapValues;
+exports.canConsumeForm = canConsumeForm;
+exports.BASE_PATH = 'https://backend.warpbuild.com/api/v1'.replace(/\/+$/, '');
+class Configuration {
+    configuration;
+    constructor(configuration = {}) {
+        this.configuration = configuration;
+    }
+    set config(configuration) {
+        this.configuration = configuration;
+    }
+    get basePath() {
+        return this.configuration.basePath != null
+            ? this.configuration.basePath
+            : exports.BASE_PATH;
+    }
+    get fetchApi() {
+        return this.configuration.fetchApi;
+    }
+    get middleware() {
+        return this.configuration.middleware || [];
+    }
+    get queryParamsStringify() {
+        return this.configuration.queryParamsStringify || querystring;
+    }
+    get username() {
+        return this.configuration.username;
+    }
+    get password() {
+        return this.configuration.password;
+    }
+    get apiKey() {
+        const apiKey = this.configuration.apiKey;
+        if (apiKey) {
+            return typeof apiKey === 'function' ? apiKey : () => apiKey;
+        }
+        return undefined;
+    }
+    get accessToken() {
+        const accessToken = this.configuration.accessToken;
+        if (accessToken) {
+            return typeof accessToken === 'function'
+                ? accessToken
+                : async () => accessToken;
+        }
+        return undefined;
+    }
+    get headers() {
+        return this.configuration.headers;
+    }
+    get credentials() {
+        return this.configuration.credentials;
+    }
+}
+exports.Configuration = Configuration;
+exports.DefaultConfig = new Configuration();
+/**
+ * This is the base class for all generated API classes.
+ */
+class BaseAPI {
+    configuration;
+    static jsonRegex = new RegExp('^(:?application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(:?;.*)?$', 'i');
+    middleware;
+    constructor(configuration = exports.DefaultConfig) {
+        this.configuration = configuration;
+        this.middleware = configuration.middleware;
+    }
+    withMiddleware(...middlewares) {
+        const next = this.clone();
+        next.middleware = next.middleware.concat(...middlewares);
+        return next;
+    }
+    withPreMiddleware(...preMiddlewares) {
+        const middlewares = preMiddlewares.map(pre => ({ pre }));
+        return this.withMiddleware(...middlewares);
+    }
+    withPostMiddleware(...postMiddlewares) {
+        const middlewares = postMiddlewares.map(post => ({ post }));
+        return this.withMiddleware(...middlewares);
+    }
+    /**
+     * Check if the given MIME is a JSON MIME.
+     * JSON MIME examples:
+     *   application/json
+     *   application/json; charset=UTF8
+     *   APPLICATION/JSON
+     *   application/vnd.company+json
+     * @param mime - MIME (Multipurpose Internet Mail Extensions)
+     * @return True if the given MIME is JSON, false otherwise.
+     */
+    isJsonMime(mime) {
+        if (!mime) {
+            return false;
+        }
+        return BaseAPI.jsonRegex.test(mime);
+    }
+    async request(context, initOverrides) {
+        const { url, init } = await this.createFetchParams(context, initOverrides);
+        const response = await this.fetchApi(url, init);
+        if (response && response.status >= 200 && response.status < 300) {
+            return response;
+        }
+        throw new ResponseError(response, 'Response returned an error code');
+    }
+    async createFetchParams(context, initOverrides) {
+        let url = this.configuration.basePath + context.path;
+        if (context.query !== undefined &&
+            Object.keys(context.query).length !== 0) {
+            // only add the querystring to the URL if there are query parameters.
+            // this is done to avoid urls ending with a "?" character which buggy webservers
+            // do not handle correctly sometimes.
+            url += '?' + this.configuration.queryParamsStringify(context.query);
+        }
+        const headers = Object.assign({}, this.configuration.headers, context.headers);
+        Object.keys(headers).forEach(key => headers[key] === undefined ? delete headers[key] : {});
+        const initOverrideFn = typeof initOverrides === 'function'
+            ? initOverrides
+            : async () => initOverrides;
+        const initParams = {
+            method: context.method,
+            headers,
+            body: context.body,
+            credentials: this.configuration.credentials
+        };
+        const overriddenInit = {
+            ...initParams,
+            ...(await initOverrideFn({
+                init: initParams,
+                context
+            }))
+        };
+        let body;
+        if (isFormData(overriddenInit.body) ||
+            overriddenInit.body instanceof URLSearchParams ||
+            isBlob(overriddenInit.body)) {
+            body = overriddenInit.body;
+        }
+        else if (this.isJsonMime(headers['Content-Type'])) {
+            body = JSON.stringify(overriddenInit.body);
+        }
+        else {
+            body = overriddenInit.body;
+        }
+        const init = {
+            ...overriddenInit,
+            body
+        };
+        return { url, init };
+    }
+    fetchApi = async (url, init) => {
+        let fetchParams = { url, init };
+        for (const middleware of this.middleware) {
+            if (middleware.pre) {
+                fetchParams =
+                    (await middleware.pre({
+                        fetch: this.fetchApi,
+                        ...fetchParams
+                    })) || fetchParams;
+            }
+        }
+        let response = undefined;
+        try {
+            response = await (this.configuration.fetchApi || fetch)(fetchParams.url, fetchParams.init);
+        }
+        catch (e) {
+            for (const middleware of this.middleware) {
+                if (middleware.onError) {
+                    response =
+                        (await middleware.onError({
+                            fetch: this.fetchApi,
+                            url: fetchParams.url,
+                            init: fetchParams.init,
+                            error: e,
+                            response: response ? response.clone() : undefined
+                        })) || response;
+                }
+            }
+            if (response === undefined) {
+                if (e instanceof Error) {
+                    throw new FetchError(e, 'The request failed and the interceptors did not return an alternative response');
+                }
+                else {
+                    throw e;
+                }
+            }
+        }
+        for (const middleware of this.middleware) {
+            if (middleware.post) {
+                response =
+                    (await middleware.post({
+                        fetch: this.fetchApi,
+                        url: fetchParams.url,
+                        init: fetchParams.init,
+                        response: response.clone()
+                    })) || response;
+            }
+        }
+        return response;
+    };
+    /**
+     * Create a shallow clone of `this` by constructing a new instance
+     * and then shallow cloning data members.
+     */
+    clone() {
+        const constructor = this.constructor;
+        const next = new constructor(this.configuration);
+        next.middleware = this.middleware.slice();
+        return next;
+    }
+}
+exports.BaseAPI = BaseAPI;
+function isBlob(value) {
+    return typeof Blob !== 'undefined' && value instanceof Blob;
+}
+function isFormData(value) {
+    return typeof FormData !== 'undefined' && value instanceof FormData;
+}
+class ResponseError extends Error {
+    response;
+    name = 'ResponseError';
+    constructor(response, msg) {
+        super(msg);
+        this.response = response;
+    }
+}
+exports.ResponseError = ResponseError;
+class FetchError extends Error {
+    cause;
+    name = 'FetchError';
+    constructor(cause, msg) {
+        super(msg);
+        this.cause = cause;
+    }
+}
+exports.FetchError = FetchError;
+class RequiredError extends Error {
+    field;
+    name = 'RequiredError';
+    constructor(field, msg) {
+        super(msg);
+        this.field = field;
+    }
+}
+exports.RequiredError = RequiredError;
+exports.COLLECTION_FORMATS = {
+    csv: ',',
+    ssv: ' ',
+    tsv: '\t',
+    pipes: '|'
+};
+function querystring(params, prefix = '') {
+    return Object.keys(params)
+        .map(key => querystringSingleKey(key, params[key], prefix))
+        .filter(part => part.length > 0)
+        .join('&');
+}
+function querystringSingleKey(key, value, keyPrefix = '') {
+    const fullKey = keyPrefix + (keyPrefix.length ? `[${key}]` : key);
+    if (value instanceof Array) {
+        const multiValue = value
+            .map(singleValue => encodeURIComponent(String(singleValue)))
+            .join(`&${encodeURIComponent(fullKey)}=`);
+        return `${encodeURIComponent(fullKey)}=${multiValue}`;
+    }
+    if (value instanceof Set) {
+        const valueAsArray = Array.from(value);
+        return querystringSingleKey(key, valueAsArray, keyPrefix);
+    }
+    if (value instanceof Date) {
+        return `${encodeURIComponent(fullKey)}=${encodeURIComponent(value.toISOString())}`;
+    }
+    if (value instanceof Object) {
+        return querystring(value, fullKey);
+    }
+    return `${encodeURIComponent(fullKey)}=${encodeURIComponent(String(value))}`;
+}
+function mapValues(data, fn) {
+    return Object.keys(data).reduce((acc, key) => ({ ...acc, [key]: fn(data[key]) }), {});
+}
+function canConsumeForm(consumes) {
+    for (const consume of consumes) {
+        if ('multipart/form-data' === consume.contentType) {
+            return true;
+        }
+    }
+    return false;
+}
+class JSONApiResponse {
+    raw;
+    transformer;
+    constructor(raw, transformer = (jsonValue) => jsonValue) {
+        this.raw = raw;
+        this.transformer = transformer;
+    }
+    async value() {
+        return this.transformer(await this.raw.json());
+    }
+}
+exports.JSONApiResponse = JSONApiResponse;
+class VoidApiResponse {
+    raw;
+    constructor(raw) {
+        this.raw = raw;
+    }
+    async value() {
+        return undefined;
+    }
+}
+exports.VoidApiResponse = VoidApiResponse;
+class BlobApiResponse {
+    raw;
+    constructor(raw) {
+        this.raw = raw;
+    }
+    async value() {
+        return await this.raw.blob();
+    }
+}
+exports.BlobApiResponse = BlobApiResponse;
+class TextApiResponse {
+    raw;
+    constructor(raw) {
+        this.raw = raw;
+    }
+    async value() {
+        return await this.raw.text();
+    }
+}
+exports.TextApiResponse = TextApiResponse;
 
 
 /***/ }),
@@ -25023,6 +28019,14 @@ module.exports = require("async_hooks");
 
 "use strict";
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ 2081:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
 
 /***/ }),
 

@@ -1,0 +1,997 @@
+swagger: '2.0'
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the docs for warp builds api for argonaut
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Warp Builds API Docs
+  version: 0.4.0
+host: backend.warpbuild.com
+basePath: /api/v1
+schemes:
+  - https
+paths:
+  /runner-image-pull-secrets:
+    get:
+      consumes:
+        - application/json
+      operationId: ListRunnerImagePullSecrets
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.ListRunnerImagePullSecretsOutput'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: List all runner image pull secrets.
+      tags:
+        - v1 runner_images
+    post:
+      consumes:
+        - application/json
+      operationId: CreateRunnerImagePullSecret
+      parameters:
+        - description: Runner Image Pull Secret
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/commons.CreateRunnerImagePullSecretInput'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImagePullSecret'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Create a new runner image pull secret.
+      tags:
+        - v1 runner_images
+  /runner-image-pull-secrets/{id}:
+    delete:
+      consumes:
+        - application/json
+      operationId: DeleteRunnerImagePullSecret
+      parameters:
+        - description: Runner Image Pull Secret ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/types.GenericSuccessMessage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Delete runner image pull secret details for the id.
+      tags:
+        - v1 runner_images
+    get:
+      consumes:
+        - application/json
+      operationId: GetRunnerImagePullSecret
+      parameters:
+        - description: Runner Image Pull Secret ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImagePullSecret'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Get runner image pull secret details for the id.
+      tags:
+        - v1 runner_images
+    put:
+      consumes:
+        - application/json
+      operationId: UpdateRunnerImagePullSecret
+      parameters:
+        - description: Runner Image Pull Secret ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Runner Image Pull Secret
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/commons.UpdateRunnerImagePullSecretInput'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImagePullSecret'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Update runner image pull secret details for the id.
+      tags:
+        - v1 runner_images
+  /runner-image-versions:
+    get:
+      consumes:
+        - application/json
+      operationId: ListRunnerImageVersions
+      parameters:
+        - description: Runner Image ID
+          in: query
+          name: runner_image_id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.ListRunnerImageVersionsOutput'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: List all runner image versions.
+      tags:
+        - v1 runner_image_versions
+  /runner-image-versions/{id}:
+    delete:
+      consumes:
+        - application/json
+      operationId: DeleteRunnerImageVersion
+      parameters:
+        - description: Runner Image Version ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/types.GenericSuccessMessage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Delete runner image version details for the id.
+      tags:
+        - v1 runner_image_versions
+    get:
+      consumes:
+        - application/json
+      operationId: GetRunnerImageVersion
+      parameters:
+        - description: Runner Image Version ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImageVersion'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Get runner image version details for the id.
+      tags:
+        - v1 runner_image_versions
+    patch:
+      consumes:
+        - application/json
+      operationId: UpdateRunnerImageVersion
+      parameters:
+        - description: Runner Image Version ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Runner Image Version
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/commons.UpdateRunnerImageVersionInput'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImageVersion'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Update runner image version details for the id.
+      tags:
+        - v1 runner_image_versions
+  /runner-images:
+    get:
+      consumes:
+        - application/json
+      operationId: ListRunnerImages
+      parameters:
+        - description: Alias
+          in: query
+          name: alias
+          type: string
+        - description: Runner Image Pull Secret ID
+          in: query
+          name: runner_image_pull_secret_id
+          type: string
+        - description: Stack Kind
+          in: query
+          name: stack_kind
+          type: string
+        - description: Region
+          in: query
+          name: region
+          type: string
+        - collectionFormat: multi
+          description: Arch
+          in: query
+          items:
+            enum:
+              - x64
+              - arm64
+            type: string
+          name: arch
+          type: array
+        - collectionFormat: multi
+          description: OS
+          in: query
+          items:
+            enum:
+              - mac
+              - ubuntu
+            type: string
+          name: os
+          type: array
+        - collectionFormat: multi
+          description: Type
+          in: query
+          items:
+            enum:
+              - container
+              - warpbuild_managed
+              - warpbuild_snapshot_image
+            type: string
+          name: type
+          type: array
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.ListRunnerImagesOutput'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: List all runner images.
+      tags:
+        - v1 runner_images
+    post:
+      consumes:
+        - application/json
+      operationId: CreateRunnerImage
+      parameters:
+        - description: Runner Image
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/commons.CreateRunnerImageInput'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Create a new runner image.
+      tags:
+        - v1 runner_images
+  /runner-images/{id}:
+    delete:
+      consumes:
+        - application/json
+      operationId: DeleteRunnerImage
+      parameters:
+        - description: Runner Image ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Delete runner image details for the id.
+      tags:
+        - v1 runner_images
+    get:
+      consumes:
+        - application/json
+      operationId: GetRunnerImage
+      parameters:
+        - description: Runner Image ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Get runner image details for the id.
+      tags:
+        - v1 runner_images
+    put:
+      consumes:
+        - application/json
+      operationId: UpdateRunnerImage
+      parameters:
+        - description: Runner Image ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Runner Image
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/commons.UpdateRunnerImageInput'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImage'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Update runner image details for the id.
+      tags:
+        - v1 runner_images
+  /runner-images/{id}/latest-version:
+    get:
+      consumes:
+        - application/json
+      operationId: GetLatestRunnerImageVersion
+      parameters:
+        - description: Runner Image ID
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/commons.RunnerImageVersion'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/WarpBuildAPIError'
+      security:
+        - JWTKeyAuth: []
+      summary: Get latest runner image version details for the id.
+      tags:
+        - v1 runner_images
+definitions:
+  WarpBuildAPIError:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      message:
+        type: string
+      sub_code:
+        type: string
+      sub_message:
+        type: string
+    type: object
+  commons.ContainerRunnerImage:
+    properties:
+      args:
+        items:
+          type: string
+        type: array
+      command:
+        type: string
+      entrypoint:
+        type: string
+      environment_variables:
+        additionalProperties:
+          type: string
+        type: object
+      image_repository:
+        type: string
+      image_tag:
+        type: string
+    type: object
+  commons.ContainerRunnerImageUpdate:
+    properties:
+      image_tag:
+        type: string
+    type: object
+  commons.ContainerRunnerImageVersion:
+    properties:
+      data_dir_size:
+        type: string
+      image_digest:
+        type: string
+      image_repository:
+        type: string
+      image_size:
+        type: string
+      image_tag:
+        type: string
+      image_uri:
+        description: |-
+          ImageURI is the full uri of the image.
+          This can be used to download the image
+
+          +OutputOnly
+        type: string
+      snapshot_id:
+        type: string
+      snapshot_size:
+        type: string
+      volume_id:
+        type: string
+      volume_size_gb:
+        description: |-
+          VolumeSizeGB is the size of the volume in GB.
+          This is used when creating a snapshot out of the volume.
+
+          This is rounded up to the nearest GiB.
+        type: integer
+    type: object
+  commons.CreateRunnerImageInput:
+    properties:
+      alias:
+        type: string
+      arch:
+        type: string
+      container_runner_image:
+        $ref: '#/definitions/commons.ContainerRunnerImage'
+      hooks:
+        items:
+          $ref: '#/definitions/commons.RunnerImageHook'
+        type: array
+      os:
+        type: string
+      runner_image_pull_secret_id:
+        type: string
+      settings:
+        $ref: '#/definitions/commons.RunnerImageSettings'
+      stack_id:
+        type: string
+      type:
+        type: string
+      warpbuild_snapshot_image:
+        $ref: '#/definitions/commons.WarpbuildSnapshotImage'
+        description: |-
+          WarpbuildSnapshotImage is the vm image used by warpbuild to run the jobs.
+          This will have the info for internal images managed by warpbuild when
+          type = 'warpbuild_managed'.
+
+          In case of container images, this will have the base image of the VM on
+          which the container is run.
+    type: object
+  commons.CreateRunnerImagePullSecretInput:
+    properties:
+      alias:
+        type: string
+      aws:
+        $ref: '#/definitions/commons.RunnerImagePullSecretAWS'
+      docker_credentials:
+        $ref: '#/definitions/commons.RunnerImagePullSecretDockerCredentials'
+      type:
+        enum:
+          - docker_credentials
+          - aws
+        type: string
+    required:
+      - alias
+      - type
+    type: object
+  commons.ListRunnerImagePullSecretsOutput:
+    properties:
+      runner_image_pull_secrets:
+        items:
+          $ref: '#/definitions/commons.RunnerImagePullSecret'
+        type: array
+    type: object
+  commons.ListRunnerImageVersionsOutput:
+    properties:
+      runner_image_versions:
+        items:
+          $ref: '#/definitions/commons.RunnerImageVersion'
+        type: array
+    type: object
+  commons.ListRunnerImagesOutput:
+    properties:
+      runner_images:
+        items:
+          $ref: '#/definitions/commons.RunnerImage'
+        type: array
+    required:
+      - runner_images
+    type: object
+  commons.RunnerImage:
+    properties:
+      alias:
+        type: string
+      arch:
+        type: string
+      container_runner_image:
+        $ref: '#/definitions/commons.ContainerRunnerImage'
+      created_at:
+        type: string
+      hooks:
+        items:
+          $ref: '#/definitions/commons.RunnerImageHook'
+        type: array
+      id:
+        type: string
+      organization_id:
+        type: string
+      os:
+        type: string
+      parent_image_id:
+        type: string
+      root_parent_image_id:
+        type: string
+      runner_image_pull_secret_id:
+        type: string
+      settings:
+        $ref: '#/definitions/commons.RunnerImageSettings'
+      stack_id:
+        type: string
+      status:
+        enum:
+          - creating
+          - updating
+          - deleting
+          - available
+          - failed
+        type: string
+      type:
+        enum:
+          - container
+          - warpbuild_managed
+          - warpbuild_snapshot_image
+        type: string
+      updated_at:
+        type: string
+      version:
+        $ref: '#/definitions/commons.RunnerImageVersion'
+        description: |-
+          Version is the latest version of the runner image.
+          This is present if the runner image is available to be used.
+
+          This is only populated by the runner image GET endpoint.
+
+          This is not populated if the type is 'warpbuild_managed'.
+      warpbuild_image:
+        $ref: '#/definitions/commons.WarpbuildImage'
+        description: |-
+          WarpbuildImage is the vm image used by warpbuild to run the jobs.
+          This will have the info for internal images managed by warpbuild when
+          type = 'warpbuild_managed'.
+
+          In case of container images, this will have the base image of the VM on
+          which the container is run.
+      warpbuild_snapshot_image:
+        $ref: '#/definitions/commons.WarpbuildSnapshotImage'
+    required:
+      - id
+    type: object
+  commons.RunnerImageHook:
+    properties:
+      file:
+        description: |-
+          File is the base64 encoded file.
+          This must be a shell script which is encoded in base64.
+        type: string
+      type:
+        description: Type is the type of hook.
+        enum:
+          - github_prehook
+          - github_posthook
+        type: string
+    type: object
+  commons.RunnerImagePullSecret:
+    properties:
+      alias:
+        type: string
+      aws:
+        $ref: '#/definitions/commons.RunnerImagePullSecretAWS'
+      created_at:
+        type: string
+      docker_credentials:
+        $ref: '#/definitions/commons.RunnerImagePullSecretDockerCredentials'
+      id:
+        type: string
+      organization_id:
+        type: string
+      type:
+        enum:
+          - docker_credentials
+          - aws
+        type: string
+      updated_at:
+        type: string
+    required:
+      - alias
+      - created_at
+      - id
+      - organization_id
+      - type
+      - updated_at
+    type: object
+  commons.RunnerImagePullSecretAWS:
+    properties:
+      access_key_id:
+        type: string
+      region:
+        type: string
+      secret_access_key:
+        type: string
+    required:
+      - access_key_id
+      - region
+      - secret_access_key
+    type: object
+  commons.RunnerImagePullSecretDockerCredentials:
+    properties:
+      host:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+      - host
+      - password
+      - username
+    type: object
+  commons.RunnerImageSettings:
+    properties:
+      purge_image_versions_offset:
+        description: |-
+          PurgeImageVersionsOffset is the number of versions to keep.
+          Each time a new version is created, the oldest version is purged.
+          Allowed values range [1, inf).
+
+          Default value is 2.
+        type: integer
+    type: object
+  commons.RunnerImageVersion:
+    properties:
+      arch:
+        type: string
+      container_runner_image:
+        $ref: '#/definitions/commons.ContainerRunnerImageVersion'
+      created_at:
+        type: string
+      external_id:
+        description:
+          ExternalID is the ID of the runner image version in the external
+          system.
+        type: string
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/commons.RunnerImageVersionMeta'
+      organization_id:
+        type: string
+      os:
+        type: string
+      parent_image_id:
+        type: string
+      root_parent_image_id:
+        type: string
+      runner_image_id:
+        type: string
+      runner_image_pull_secret_id:
+        type: string
+      stack_id:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      version_time_id:
+        type: integer
+    type: object
+  commons.RunnerImageVersionMeta:
+    properties:
+      event: {}
+      parsed_event: {}
+    type: object
+  commons.UpdateContainerRunnerImageVersion:
+    properties:
+      data_dir_size:
+        type: string
+      image_digest:
+        type: string
+      image_size:
+        description: |-
+          ImageSize is the size of the image.
+          Expected format: "4G"
+        type: string
+      snapshot_id:
+        type: string
+      snapshot_size:
+        description:
+          SnapshotSize is the size of the snapshot in human readable format.
+        type: string
+      volume_id:
+        type: string
+      volume_size_gb:
+        description: |-
+          VolumeSizeGB is the size of the volume in GB.
+          This is used when creating a snapshot out of the volume.
+
+          This is rounded up to the nearest GiB.
+        type: integer
+    type: object
+  commons.UpdateRunnerImageInput:
+    properties:
+      container_runner_image:
+        $ref: '#/definitions/commons.ContainerRunnerImageUpdate'
+      hooks:
+        items:
+          $ref: '#/definitions/commons.RunnerImageHook'
+        type: array
+      id:
+        type: string
+      runner_image_pull_secret_id:
+        type: string
+      settings:
+        $ref: '#/definitions/commons.RunnerImageSettings'
+      warpbuild_snapshot_image:
+        $ref: '#/definitions/commons.WarpbuildSnapshotImage'
+        description: |-
+          WarpbuildSnapshotImage is the vm image used by warpbuild to run the jobs.
+          This will have the info for internal images managed by warpbuild when
+          type = 'warpbuild_managed'.
+
+          In case of container images, this will have the base image of the VM on
+          which the container is run.
+    type: object
+  commons.UpdateRunnerImagePullSecretInput:
+    properties:
+      aws:
+        $ref: '#/definitions/commons.RunnerImagePullSecretAWS'
+      docker_credentials:
+        $ref: '#/definitions/commons.RunnerImagePullSecretDockerCredentials'
+    type: object
+  commons.UpdateRunnerImageVersionInput:
+    properties:
+      container_runner_image_version:
+        $ref: '#/definitions/commons.UpdateContainerRunnerImageVersion'
+      parent_image_id:
+        type: string
+      status:
+        type: string
+      warpbuild_snapshot_image:
+        $ref: '#/definitions/commons.WarpbuildSnapshotImage'
+    type: object
+  commons.WarpbuildImage:
+    properties:
+      cloud_init_template:
+        type: string
+      image_uri:
+        type: string
+    type: object
+  commons.WarpbuildSnapshotImage:
+    properties:
+      ami_id:
+        description: |-
+          AMIID is the ID of the AMI.
+
+          +OutputOnly
+        type: string
+      creator_runner_instance_id:
+        description: |-
+          CreatorRunnerInstanceID is the ID of the runner instance that created the snapshot.
+          This is populated via the auth token.
+
+          +OutputOnly
+        type: string
+      provider:
+        description: |-
+          Provider is the cloud provider of the snapshot.
+
+          +OutputOnly
+        type: string
+      snapshot_id:
+        description: |-
+          SnapshotID is the ID of the snapshot.
+
+          +OutputOnly
+        type: string
+      vcs_organization_name:
+        description: |-
+          VCSOrganizationName is the name of the VCS organization.
+          This is populated via the auth token.
+
+          +OutputOnly
+        type: string
+      vcs_repository_name:
+        description: |-
+          VCSRepositoryName is the name of the VCS repository.
+          This is populated via the auth token.
+
+          +OutputOnly
+        type: string
+      version_id:
+        description: |-
+          VersionID is the ID of the version.
+          This is used when creating a new version of the snapshot.
+        type: integer
+    type: object
+  types.GenericSuccessMessage:
+    properties:
+      message:
+        type: string
+    type: object
+x-extension-openapi:
+  example: value on a json format
