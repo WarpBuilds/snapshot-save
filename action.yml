@@ -6,6 +6,7 @@ inputs:
   warpbuild-base-url:
     description: 'Warpbuild Server base URL'
     required: false
+    default: 'https://api.warpbuild.com/api/v1'
   wait-timeout-minutes:
     description: 'Timeout in minutes to wait for the snapshot to be ready'
     required: false
