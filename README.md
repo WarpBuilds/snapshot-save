@@ -8,7 +8,7 @@ your workflow, allowing you to reuse them for faster consecutive runs.
 ## Prerequisites
 
 - Supported Platforms: WarpBuild Linux x64 and arm runners.
-- Unsupported Platforms: Container image based runners and Mac runners are not
+- Unsupported Platforms: BYOC based runners, container image based runners and Mac runners are not
   supported.
 
 ## Usage
@@ -172,3 +172,7 @@ This action was created by [WarpBuild](https://warpbuild.com).
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Addtional Notes
+
+BYOC based snapshot runners will be launched soon.
