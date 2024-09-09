@@ -36,6 +36,9 @@ Invoking the action creates the snapshot of the runner. To use the snapshot in
 subsequent runs, specify the snapshot alias in the `runs-on` field of the job as
 shown above.
 
+If the runner machine is made from a snapshot, it will have an environment
+variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
+
 ### Inputs
 
 - **alias** (Required): A unique alias for the snapshot. This helps identify and
