@@ -74,6 +74,16 @@ set -e
 # Remove /var/lib/warpbuild-agentd/settings.json
 sudo rm /var/lib/warpbuild-agentd/settings.json
 
+# This command forces a write of all buffered I/O data to the disks. 
+# It ensures that any data held in memory is written to disk, 
+# minimizing the risk of data loss in case of a sudden power loss
+# or system failure.
+echo "Flushing file system buffers..."
+sync
+    
+# Pause for a few seconds to ensure all I/O operations are complete
+sleep 5
+
 echo "Cleanup complete"
 `
 
@@ -122,8 +132,7 @@ echo "Cleanup complete"
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${
-          opts.runnerImageAlias
+        `Updating existing snapshot alias '${opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
@@ -134,15 +143,13 @@ echo "Cleanup complete"
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
-          `Updating existing snapshot alias '${
-            opts.runnerImageAlias
+          `Updating existing snapshot alias '${opts.runnerImageAlias
           }' to new arch '${currArch}' from '${existingArch}' isn't supported'`
         )
       }
       if (existingOs !== currOs) {
         throw new Error(
-          `Updating existing snapshot alias '${
-            opts.runnerImageAlias
+          `Updating existing snapshot alias '${opts.runnerImageAlias
           }' to new os '${currOs}' from '${existingOs}' isn't supported'`
         )
       }
