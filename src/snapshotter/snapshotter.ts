@@ -75,9 +75,6 @@ set -e
 sudo rm /var/lib/warpbuild-agentd/settings.json
 
 # This command forces a write of all buffered I/O data to the disks. 
-# It ensures that any data held in memory is written to disk, 
-# minimizing the risk of data loss in case of a sudden power loss
-# or system failure.
 echo "Flushing file system buffers..."
 sync
     
@@ -91,6 +88,16 @@ echo "Cleanup complete"
     fs.writeFileSync(cleanupScriptFile, cleanupScript)
     fs.chmodSync(cleanupScriptFile, '755')
     this.logger.debug(`Cleanup script: ${cleanupScriptFile}`)
+
+    // Check if the file exists and has the correct permissions
+    try {
+      fs.accessSync(cleanupScriptFile, fs.constants.X_OK);
+      this.logger.debug(`${cleanupScriptFile} is executable.`);
+    } catch (err) {
+      this.logger.error(`${cleanupScriptFile} is not executable or not found: ${err}`);
+      return;
+    }
+
 
     try {
       // Use spawn instead of exec for better control over output
