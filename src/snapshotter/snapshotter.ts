@@ -3,7 +3,7 @@ import { Logger } from './logger'
 import { Warpbuild, WarpbuildOptions } from './warpbuild-client'
 import { humanTime } from './human-time'
 import { CommonsRunnerImageVersion } from '../warpbuild/src'
-import { exec } from 'child_process'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 
 export type SnapshotterOptions = {
@@ -74,6 +74,13 @@ set -e
 # Remove /var/lib/warpbuild-agentd/settings.json
 sudo rm /var/lib/warpbuild-agentd/settings.json
 
+# This command forces a write of all buffered I/O data to the disks. 
+echo "Flushing file system buffers..."
+sync
+    
+# Pause for a few seconds to ensure all I/O operations are complete
+# sleep 5
+
 echo "Cleanup complete"
 `
 
@@ -82,17 +89,42 @@ echo "Cleanup complete"
     fs.chmodSync(cleanupScriptFile, '755')
     this.logger.debug(`Cleanup script: ${cleanupScriptFile}`)
 
-    exec(`bash ./${cleanupScriptFile}`, (error, stdout, stderr) => {
-      if (error) {
-        this.logger.error(error.message)
-        return
-      }
-      if (stderr) {
-        this.logger.error(stderr)
-        return
-      }
-      this.logger.debug(stdout)
-    })
+    // Check if the file exists and has the correct permissions
+    try {
+      fs.accessSync(cleanupScriptFile, fs.constants.X_OK)
+      this.logger.debug(`${cleanupScriptFile} is executable.`)
+    } catch (err) {
+      this.logger.error(
+        `${cleanupScriptFile} is not executable or not found: ${err}`
+      )
+      return
+    }
+
+    try {
+      // Use spawn instead of exec for better control over output
+      const cleanupProcess = spawn(`bash`, [`./${cleanupScriptFile}`], {
+        stdio: 'inherit' // Use 'inherit' to show the output directly
+      })
+
+      cleanupProcess.on('error', error => {
+        this.logger.error(`Failed to start cleanup script: ${error.message}`)
+      })
+
+      cleanupProcess.on('exit', code => {
+        if (code === 0) {
+          this.logger.info('Cleanup script executed successfully.')
+        } else {
+          this.logger.error(`Cleanup script exited with code ${code}`)
+        }
+      })
+
+      // Wait for the cleanup process to finish before proceeding
+      await new Promise(resolve => {
+        cleanupProcess.on('close', resolve)
+      })
+    } catch (err) {
+      this.logger.error(`Error running cleanup script: ${err}`)
+    }
 
     const warpbuildClient = new Warpbuild(wo)
 
