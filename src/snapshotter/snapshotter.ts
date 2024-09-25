@@ -101,7 +101,7 @@ echo "Cleanup complete"
         this.logger.error(stderr)
         return
       }
-      this.logger.debug(stdout)
+      this.logger.info(stdout)
     })
 
     const warpbuildClient = new Warpbuild(wo)
