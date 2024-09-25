@@ -79,7 +79,7 @@ echo "Flushing file system buffers..."
 sync
     
 # Pause for a few seconds to ensure all I/O operations are complete
-sleep 5
+# sleep 5
 
 echo "Cleanup complete"
 `
