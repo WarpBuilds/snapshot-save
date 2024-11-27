@@ -71,13 +71,6 @@ export class Snapshotter {
 
 set -e
 
-# Remove /var/lib/warpbuild-agentd/settings.json
-sudo rm /var/lib/warpbuild-agentd/settings.json
-
-# This command forces a write of all buffered I/O data to the disks. 
-echo "Flushing file system buffers..."
-sync
-
 printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^WARPBUILD_' | grep -v '^RUNNER_' | grep -v '^_' | grep -v '^USER$' | grep -v '^SYSTEMD_EXEC_PID$' | grep -v '^SUDO_USER$' | grep -v '^SUDO_GID$' | grep -v '^SUDO_UID$' | grep -v '^SHELL$' | grep -v '^SHLVL$' | grep -v '^XDG_' | grep -v '^JOURNAL_STREAM$' | grep -v '^HOME$' | sort | while IFS= read -r line; do
   key=$(echo "$line" | cut -d= -f1)
   value=$(echo "$line" | cut -d= -f2-)
@@ -90,7 +83,15 @@ done
 
 # Remove PATH from /runner/.env
 sed -i '/^PATH=/d' /runner/.env
-    
+ 
+# Remove /var/lib/warpbuild-agentd/settings.json
+sudo rm /var/lib/warpbuild-agentd/settings.json
+
+# This command forces a write of all buffered I/O data to the disks. 
+# Do this at the end
+echo "Flushing file system buffers..."
+sync
+   
 # Pause for a few seconds to ensure all I/O operations are complete
 # sleep 5
 
