@@ -167,7 +167,8 @@ echo "Presave complete"
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${opts.runnerImageAlias
+        `Updating existing snapshot alias '${
+          opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
@@ -178,13 +179,15 @@ echo "Presave complete"
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
-          `Updating existing snapshot alias '${opts.runnerImageAlias
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
           }' to new arch '${currArch}' from '${existingArch}' isn't supported'`
         )
       }
       if (existingOs !== currOs) {
         throw new Error(
-          `Updating existing snapshot alias '${opts.runnerImageAlias
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
           }' to new os '${currOs}' from '${existingOs}' isn't supported'`
         )
       }
