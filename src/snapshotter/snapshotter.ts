@@ -83,7 +83,7 @@ printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v
   fi
 done
 
-echo "Logging environment variables"
+echo "Logging environment variables in /etc/environment"
 echo "--------------------------------"
 cat /etc/environment
 echo "--------------------------------"
