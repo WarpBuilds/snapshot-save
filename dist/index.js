@@ -25201,7 +25201,9 @@ class Snapshotter {
 
 set -e
 
-printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^WARPBUILD_' | grep -v '^RUNNER_' | grep -v '^_' | grep -v '^USER$' | grep -v '^SYSTEMD_EXEC_PID$' | grep -v '^SUDO_USER$' | grep -v '^SUDO_GID$' | grep -v '^SUDO_UID$' | grep -v '^SHELL$' | grep -v '^SHLVL$' | grep -v '^XDG_' | grep -v '^JOURNAL_STREAM$' | grep -v '^HOME$' | sort | while IFS= read -r line; do
+echo "Saving environment variables to /etc/environment"
+
+printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v '^INPUT_' | grep -v '^WARPBUILD_' | grep -v '^RUNNER_' | grep -v '^_' | grep -v '^USER$' | grep -v '^INVOCATION_ID$' | grep -v '^SYSTEMD_EXEC_PID$' | grep -v '^SUDO_USER$' | grep -v '^SUDO_GID$' | grep -v '^SUDO_UID$' | grep -v '^SHELL$' | grep -v '^SHLVL$' | grep -v '^XDG_' | grep -v '^JOURNAL_STREAM$' | grep -v '^HOME$' | sort | while IFS= read -r line; do
   key=$(echo "$line" | cut -d= -f1)
   value=$(echo "$line" | cut -d= -f2-)
   if grep -q "^\${key}=" /etc/environment; then
@@ -25211,8 +25213,18 @@ printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^WARPBUILD_' | grep 
   fi
 done
 
+echo "Logging environment variables"
+echo "--------------------------------"
+cat /etc/environment
+echo "--------------------------------"
+
 # Remove PATH from /runner/.env
 sed -i '/^PATH=/d' /runner/.env
+
+echo "Logging github runner .env file"
+echo "--------------------------------"
+cat /runner/.env
+echo "--------------------------------"
  
 # Remove /var/lib/warpbuild-agentd/settings.json
 sudo rm /var/lib/warpbuild-agentd/settings.json
