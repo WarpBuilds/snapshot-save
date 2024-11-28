@@ -62,68 +62,94 @@ export class Snapshotter {
       return
     }
 
-    this.logger.info(`Running cleanup before snapshot`)
+    this.logger.info(`Running presave before snapshot`)
     const pwd = process.cwd()
     this.logger.debug(`Current working directory: ${pwd}`)
 
-    const cleanupScript = `
+    const presaveScript = `
 #!/bin/bash
 
 set -e
 
+echo "Saving environment variables to /etc/environment"
+
+printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v '^INPUT_' | grep -v '^WARPBUILD_' | grep -v '^RUNNER_' | grep -v '^_' | grep -v '^USER$' | grep -v '^INVOCATION_ID$' | grep -v '^SYSTEMD_EXEC_PID$' | grep -v '^SUDO_USER$' | grep -v '^SUDO_GID$' | grep -v '^SUDO_UID$' | grep -v '^SHELL$' | grep -v '^SHLVL$' | grep -v '^XDG_' | grep -v '^JOURNAL_STREAM$' | grep -v '^HOME$' | sort | while IFS= read -r line; do
+  key=$(echo "$line" | cut -d= -f1)
+  value=$(echo "$line" | cut -d= -f2-)
+  if grep -q "^\${key}=" /etc/environment; then
+    sudo sed -i "s|^\${key}=.*|\${key}=\${value}|" /etc/environment
+  else
+    printf '%s=%q\n' "$key" "$value" | sudo tee -a /etc/environment > /dev/null
+  fi
+done
+
+echo "Logging environment variables in /etc/environment"
+echo "--------------------------------"
+cat /etc/environment
+echo "--------------------------------"
+
+# Remove PATH from /runner/.env
+sed -i '/^PATH=/d' /runner/.env
+
+echo "Logging github runner .env file"
+echo "--------------------------------"
+cat /runner/.env
+echo "--------------------------------"
+ 
 # Remove /var/lib/warpbuild-agentd/settings.json
 sudo rm /var/lib/warpbuild-agentd/settings.json
 
 # This command forces a write of all buffered I/O data to the disks. 
+# Do this at the end
 echo "Flushing file system buffers..."
 sync
-    
+   
 # Pause for a few seconds to ensure all I/O operations are complete
 # sleep 5
 
-echo "Cleanup complete"
+echo "Presave complete"
 `
 
-    const cleanupScriptFile = 'warp-snp-cleanup.sh'
-    fs.writeFileSync(cleanupScriptFile, cleanupScript)
-    fs.chmodSync(cleanupScriptFile, '755')
-    this.logger.debug(`Cleanup script: ${cleanupScriptFile}`)
+    const presaveScriptFile = 'warp-snp-presave.sh'
+    fs.writeFileSync(presaveScriptFile, presaveScript)
+    fs.chmodSync(presaveScriptFile, '755')
+    this.logger.debug(`Presave script: ${presaveScriptFile}`)
 
     // Check if the file exists and has the correct permissions
     try {
-      fs.accessSync(cleanupScriptFile, fs.constants.X_OK)
-      this.logger.debug(`${cleanupScriptFile} is executable.`)
+      fs.accessSync(presaveScriptFile, fs.constants.X_OK)
+      this.logger.debug(`${presaveScriptFile} is executable.`)
     } catch (err) {
       this.logger.error(
-        `${cleanupScriptFile} is not executable or not found: ${err}`
+        `${presaveScriptFile} is not executable or not found: ${err}`
       )
       return
     }
 
     try {
       // Use spawn instead of exec for better control over output
-      const cleanupProcess = spawn(`bash`, [`./${cleanupScriptFile}`], {
+      const presaveProcess = spawn(`bash`, [`./${presaveScriptFile}`], {
         stdio: 'inherit' // Use 'inherit' to show the output directly
       })
 
-      cleanupProcess.on('error', error => {
-        this.logger.error(`Failed to start cleanup script: ${error.message}`)
+      presaveProcess.on('error', error => {
+        this.logger.error(`Failed to start presave script: ${error.message}`)
       })
 
-      cleanupProcess.on('exit', code => {
+      presaveProcess.on('exit', code => {
         if (code === 0) {
-          this.logger.info('Cleanup script executed successfully.')
+          this.logger.info('Presave script executed successfully.')
         } else {
-          this.logger.error(`Cleanup script exited with code ${code}`)
+          this.logger.error(`Presave script exited with code ${code}`)
         }
       })
 
-      // Wait for the cleanup process to finish before proceeding
+      // Wait for the presave process to finish before proceeding
       await new Promise(resolve => {
-        cleanupProcess.on('close', resolve)
+        presaveProcess.on('close', resolve)
       })
     } catch (err) {
-      this.logger.error(`Error running cleanup script: ${err}`)
+      this.logger.error(`Error running presave script: ${err}`)
     }
 
     const warpbuildClient = new Warpbuild(wo)
