@@ -72,7 +72,7 @@
     "@jest/globals": "^29.7.0",
     "@line/ts-remove-unused": "^0.8.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.9.0",
+    "@types/node": "^24.0.1",
     "@typescript-eslint/eslint-plugin": "^7.17.0",
     "@typescript-eslint/parser": "^7.17.0",
     "@vercel/ncc": "^0.38.3",
