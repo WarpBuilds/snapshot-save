@@ -93,8 +93,14 @@ validate_env_file() {
 
   local output
   output=$(env -i bash -c "set -a; source \"$file\"; set +a" 2>&1) || {
-    echo "Error: $file validation failed"
-    echo "$output" | head -5
+    echo ""
+    echo "❌ Validation failed for: $file"
+    echo "   The file contains syntax errors and cannot be parsed as an environment file."
+    echo "   Please check that all lines follow the format: KEY=value"
+    echo ""
+    echo "   Error details:"
+    echo "$output" | head -5 | sed 's/^/   /'
+    echo ""
     return 1
   }
 }
@@ -105,8 +111,14 @@ validate_bashrc_file() {
 
   local output
   output=$(bash -n "$file" 2>&1) || {
-    echo "Error: $file validation failed"
-    echo "$output" | head -5
+    echo ""
+    echo "❌ Validation failed for: $file"
+    echo "   The file contains bash syntax errors and cannot be parsed."
+    echo "   Please check the syntax of your bash commands."
+    echo ""
+    echo "   Error details:"
+    echo "$output" | head -5 | sed 's/^/   /'
+    echo ""
     return 1
   }
 }
