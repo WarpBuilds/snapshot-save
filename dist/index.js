@@ -25957,18 +25957,40 @@ printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v
   fi
 done
 
-echo "Logging environment variables in /etc/environment"
-echo "--------------------------------"
-cat /etc/environment
-echo "--------------------------------"
-
 # Remove PATH from /runner/.env
 sed -i '/^PATH=/d' /runner/.env
 
-echo "Logging github runner .env file"
-echo "--------------------------------"
-cat /runner/.env
-echo "--------------------------------"
+# Validation functions
+validate_env_file() {
+  local file=$1
+  [ ! -f "$file" ] && return 0
+
+  local output
+  output=$(env -i bash -c "set -a; source \"$file\"; set +a" 2>&1) || {
+    echo "Error: $file validation failed"
+    echo "$output" | head -5
+    return 1
+  }
+}
+
+validate_bashrc_file() {
+  local file=$1
+  [ ! -f "$file" ] && return 0
+
+  local output
+  output=$(bash -n "$file" 2>&1) || {
+    echo "Error: $file validation failed"
+    echo "$output" | head -5
+    return 1
+  }
+}
+
+# Validate files
+validate_env_file "/etc/environment" || exit 1
+validate_env_file "/runner/.env" || exit 1
+validate_bashrc_file "$HOME/.bashrc" || exit 1
+validate_bashrc_file "/root/.bashrc" || exit 1
+validate_bashrc_file "/etc/bash.bashrc" || exit 1
  
 # Remove /var/lib/warpbuild-agentd/settings.json
 sudo rm /var/lib/warpbuild-agentd/settings.json
