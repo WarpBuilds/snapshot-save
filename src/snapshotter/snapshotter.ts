@@ -91,18 +91,46 @@ validate_env_file() {
   local file=$1
   [ ! -f "$file" ] && return 0
 
+  # First, validate format strictly - each non-comment line must be KEY=VALUE
+  local line_num=0
+  local has_invalid=false
+  while IFS= read -r line || [ -n "$line" ]; do
+    line_num=$((line_num + 1))
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    # Must match: non-empty KEY (starts with letter/underscore, followed by alphanumeric/underscore), =, optional VALUE
+    if ! [[ "$line" =~ ^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[[:space:]]* ]]; then
+      if [ "$has_invalid" = false ]; then
+        echo ""
+        echo "❌ Validation failed for: $file"
+        echo "   The file contains lines that do not follow the format: KEY=value"
+        echo ""
+        echo "   Invalid lines:"
+        has_invalid=true
+      fi
+      printf "   Line %d: %s\n" "$line_num" "$line"
+    fi
+  done < "$file"
+
+  if [ "$has_invalid" = true ]; then
+    echo ""
+    return 1
+  fi
+
+  # Then verify it can actually be sourced/parsed
   local output
   output=$(env -i bash -c "set -a; source \"$file\"; set +a" 2>&1) || {
     echo ""
     echo "❌ Validation failed for: $file"
-    echo "   The file contains syntax errors and cannot be parsed as an environment file."
-    echo "   Please check that all lines follow the format: KEY=value"
+    echo "   The file cannot be parsed as an environment file."
     echo ""
     echo "   Error details:"
     echo "$output" | head -5 | sed 's/^/   /'
     echo ""
     return 1
   }
+  
+  echo "Validation successful for environment file: $file"
 }
 
 validate_bashrc_file() {
@@ -121,6 +149,8 @@ validate_bashrc_file() {
     echo ""
     return 1
   }
+    
+  echo "Validation successful for bashrc file: $file"
 }
 
 # Validate files
