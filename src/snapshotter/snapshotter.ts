@@ -74,6 +74,7 @@ set -e
 echo "Saving environment variables to /etc/environment"
 
 printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v '^INPUT_' | grep -v '^WARPBUILD_' | grep -v '^RUNNER_' | grep -v '^_' | grep -v '^USER$' | grep -v '^INVOCATION_ID$' | grep -v '^SYSTEMD_EXEC_PID$' | grep -v '^SUDO_USER$' | grep -v '^SUDO_GID$' | grep -v '^SUDO_UID$' | grep -v '^SHELL$' | grep -v '^SHLVL$' | grep -v '^XDG_' | grep -v '^JOURNAL_STREAM$' | grep -v '^HOME$' | sort | while IFS= read -r line; do
+  [[ $line == *=* ]] || continue        # skip malformed lines (no '=')
   key=$(echo "$line" | cut -d= -f1)
   value=$(echo "$line" | cut -d= -f2-)
   if grep -q "^\${key}=" /etc/environment; then
@@ -245,8 +246,7 @@ echo "Presave complete"
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${
-          opts.runnerImageAlias
+        `Updating existing snapshot alias '${opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
@@ -257,15 +257,13 @@ echo "Presave complete"
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
-          `Updating existing snapshot alias '${
-            opts.runnerImageAlias
+          `Updating existing snapshot alias '${opts.runnerImageAlias
           }' to new arch '${currArch}' from '${existingArch}' isn't supported'`
         )
       }
       if (existingOs !== currOs) {
         throw new Error(
-          `Updating existing snapshot alias '${
-            opts.runnerImageAlias
+          `Updating existing snapshot alias '${opts.runnerImageAlias
           }' to new os '${currOs}' from '${existingOs}' isn't supported'`
         )
       }
