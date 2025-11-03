@@ -205,6 +205,7 @@ echo "Presave complete"
           this.logger.info('Presave script executed successfully.')
         } else {
           this.logger.error(`Presave script exited with code ${code}`)
+          throw new Error(`Presave script failed with exit code ${code}`)
         }
       })
 

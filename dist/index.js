@@ -26074,6 +26074,7 @@ echo "Presave complete"
                 }
                 else {
                     this.logger.error(`Presave script exited with code ${code}`);
+                    throw new Error(`Presave script failed with exit code ${code}`);
                 }
             });
             // Wait for the presave process to finish before proceeding
