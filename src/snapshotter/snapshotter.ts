@@ -15,6 +15,7 @@ export type SnapshotterOptions = {
 export type saveSnapshotOptions = {
   runnerImageAlias: string
   waitTimeoutMinutes: number
+  skipPresave?: boolean
 }
 
 export class Snapshotter {
@@ -62,11 +63,12 @@ export class Snapshotter {
       return
     }
 
-    this.logger.info(`Running presave before snapshot`)
-    const pwd = process.cwd()
-    this.logger.debug(`Current working directory: ${pwd}`)
+    if (!opts.skipPresave) {
+      this.logger.info(`Running presave before snapshot`)
+      const pwd = process.cwd()
+      this.logger.debug(`Current working directory: ${pwd}`)
 
-    const presaveScript = `
+      const presaveScript = `
 #!/bin/bash
 
 set -e
@@ -175,47 +177,50 @@ sync
 echo "Presave complete"
 `
 
-    const presaveScriptFile = 'warp-snp-presave.sh'
-    fs.writeFileSync(presaveScriptFile, presaveScript)
-    fs.chmodSync(presaveScriptFile, '755')
-    this.logger.debug(`Presave script: ${presaveScriptFile}`)
+      const presaveScriptFile = 'warp-snp-presave.sh'
+      fs.writeFileSync(presaveScriptFile, presaveScript)
+      fs.chmodSync(presaveScriptFile, '755')
+      this.logger.debug(`Presave script: ${presaveScriptFile}`)
 
-    // Check if the file exists and has the correct permissions
-    try {
-      fs.accessSync(presaveScriptFile, fs.constants.X_OK)
-      this.logger.debug(`${presaveScriptFile} is executable.`)
-    } catch (err) {
-      this.logger.error(
-        `${presaveScriptFile} is not executable or not found: ${err}`
-      )
-      return
-    }
+      // Check if the file exists and has the correct permissions
+      try {
+        fs.accessSync(presaveScriptFile, fs.constants.X_OK)
+        this.logger.debug(`${presaveScriptFile} is executable.`)
+      } catch (err) {
+        this.logger.error(
+          `${presaveScriptFile} is not executable or not found: ${err}`
+        )
+        return
+      }
 
-    try {
-      // Use spawn instead of exec for better control over output
-      const presaveProcess = spawn(`bash`, [`./${presaveScriptFile}`], {
-        stdio: 'inherit' // Use 'inherit' to show the output directly
-      })
+      try {
+        // Use spawn instead of exec for better control over output
+        const presaveProcess = spawn(`bash`, [`./${presaveScriptFile}`], {
+          stdio: 'inherit' // Use 'inherit' to show the output directly
+        })
 
-      presaveProcess.on('error', error => {
-        this.logger.error(`Failed to start presave script: ${error.message}`)
-      })
+        presaveProcess.on('error', error => {
+          this.logger.error(`Failed to start presave script: ${error.message}`)
+        })
 
-      presaveProcess.on('exit', code => {
-        if (code === 0) {
-          this.logger.info('Presave script executed successfully.')
-        } else {
-          this.logger.error(`Presave script exited with code ${code}`)
-          throw new Error(`Presave script failed with exit code ${code}`)
-        }
-      })
+        presaveProcess.on('exit', code => {
+          if (code === 0) {
+            this.logger.info('Presave script executed successfully.')
+          } else {
+            this.logger.error(`Presave script exited with code ${code}`)
+            throw new Error(`Presave script failed with exit code ${code}`)
+          }
+        })
 
-      // Wait for the presave process to finish before proceeding
-      await new Promise(resolve => {
-        presaveProcess.on('close', resolve)
-      })
-    } catch (err) {
-      this.logger.error(`Error running presave script: ${err}`)
+        // Wait for the presave process to finish before proceeding
+        await new Promise(resolve => {
+          presaveProcess.on('close', resolve)
+        })
+      } catch (err) {
+        this.logger.error(`Error running presave script: ${err}`)
+      }
+    } else {
+      this.logger.info(`Skipping presave step`)
     }
 
     const warpbuildClient = new Warpbuild(wo)
@@ -246,7 +251,8 @@ echo "Presave complete"
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
       this.logger.info(
-        `Updating existing snapshot alias '${opts.runnerImageAlias
+        `Updating existing snapshot alias '${
+          opts.runnerImageAlias
         }' to new snapshot`
       )
       runnerImageID = images.runner_images?.[0].id || ''
@@ -257,13 +263,15 @@ echo "Presave complete"
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
-          `Updating existing snapshot alias '${opts.runnerImageAlias
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
           }' to new arch '${currArch}' from '${existingArch}' isn't supported'`
         )
       }
       if (existingOs !== currOs) {
         throw new Error(
-          `Updating existing snapshot alias '${opts.runnerImageAlias
+          `Updating existing snapshot alias '${
+            opts.runnerImageAlias
           }' to new os '${currOs}' from '${existingOs}' isn't supported'`
         )
       }
