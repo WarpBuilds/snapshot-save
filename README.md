@@ -143,6 +143,60 @@ jobs:
           wait-timeout-minutes: 60
 ```
 
+## Use with Container Images
+
+When using container images, the presave script may encounter errors. In such cases, you should set `skip-presave: true` and manually flush the file system before creating the snapshot.
+
+### Creating a Snapshot with Containers
+
+```yaml
+jobs:
+  create-snapshot:
+    runs-on: warpdev-ubuntu-2404-x64-16x
+    container:
+      image: node:20-bookworm
+      volumes:
+        # the root disk for containers are
+        # ephemeral. Use a /savepoint on
+        # host and mount it for saving changes
+        - /savepoint:/workspace
+    steps:
+      - name: Make changes to persist
+        run: |
+          cd /workspace
+          echo 'this file should now exist' > test.txt
+        shell: bash
+
+      - name: Flush file system buffers
+        run: sync
+
+      - name: Create snapshot
+        uses: WarpBuilds/snapshot-save@v1
+        with:
+          alias: "container-snapshot"
+          fail-on-error: true
+          wait-timeout-minutes: 60
+          skip-presave: true
+```
+
+### Using the Snapshot
+
+```yaml
+jobs:
+  use-snapshot:
+    runs-on: warpdev-ubuntu-2404-x64-16x;snapshot.key=container-snapshot
+    container:
+      image: node:20-bookworm
+      volumes:
+        - /savepoint:/workspace
+    steps:
+      - name: Verify snapshot data
+        run: |
+          cd /workspace
+          cat test.txt
+        shell: bash
+```
+
 ## Security
 
 ### Public Repositories

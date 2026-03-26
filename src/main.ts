@@ -18,6 +18,8 @@ export async function run(): Promise<void> {
     const waitTimeoutMinutes =
       parseInt(core.getInput('wait-timeout-minutes'), 10) || 30
 
+    const skipPresave = core.getBooleanInput('skip-presave')
+
     const warpbuildToken = process.env.WARPBUILD_RUNNER_VERIFICATION_TOKEN ?? ''
     if (!warpbuildToken) {
       throw new Error('WARPBUILD_RUNNER_VERIFICATION_TOKEN is not set')
@@ -32,7 +34,8 @@ export async function run(): Promise<void> {
 
     await snapshotter.saveSnapshot({
       runnerImageAlias,
-      waitTimeoutMinutes
+      waitTimeoutMinutes,
+      skipPresave
     })
   } catch (error) {
     let errorMessage = 'Unknown error'
