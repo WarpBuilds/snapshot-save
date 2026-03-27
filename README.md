@@ -152,7 +152,7 @@ When using container images, the presave script may encounter errors. In such ca
 ```yaml
 jobs:
   create-snapshot:
-    runs-on: warpdev-ubuntu-2404-x64-16x
+    runs-on: warp-ubuntu-2404-x64-16x
     container:
       image: node:20-bookworm
       volumes:
@@ -184,7 +184,7 @@ jobs:
 ```yaml
 jobs:
   use-snapshot:
-    runs-on: warpdev-ubuntu-2404-x64-16x;snapshot.key=container-snapshot
+    runs-on: warp-ubuntu-2404-x64-16x;snapshot.key=container-snapshot
     container:
       image: node:20-bookworm
       volumes:
