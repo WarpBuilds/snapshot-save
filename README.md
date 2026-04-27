@@ -136,7 +136,7 @@ jobs:
           rm -rf $HOME/.ssh
           rm -rf $HOME/.aws
       - name: Create snapshot
-        uses: WarpBuilds/snapshot-save@v1
+        uses: WarpBuilds/snsapshot-save@v1
         with:
           alias: 'unique-snapshot-alias'
           fail-on-error: true
@@ -145,7 +145,9 @@ jobs:
 
 ## Use with Container Images
 
-When using container images, the presave script may encounter errors. In such cases, you should set `skip-presave: true` and manually flush the file system before creating the snapshot.
+When using container images, the presave script may encounter errors. In such
+cases, you should set `skip-presave: true` and manually flush the file system
+before creating the snapshot.
 
 ### Creating a Snapshot with Containers
 
@@ -173,7 +175,7 @@ jobs:
       - name: Create snapshot
         uses: WarpBuilds/snapshot-save@v1
         with:
-          alias: "container-snapshot"
+          alias: 'container-snapshot'
           fail-on-error: true
           wait-timeout-minutes: 60
           skip-presave: true
