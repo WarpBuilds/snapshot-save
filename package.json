@@ -85,11 +85,10 @@
     "make-coverage-badge": "^1.2.0",
     "prettier": "^3.6.2",
     "prettier-eslint": "^16.4.2",
-    "ts-jest": "^29.4.5",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.9.3"
   },
   "overrides": {
-    "undici": "^6.24.0",
-    "minimatch": "^9.0.7"
+    "undici": "^6.24.0"
   }
 }

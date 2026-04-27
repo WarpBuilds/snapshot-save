@@ -122,7 +122,7 @@ validate_env_file() {
 
   # Then verify it can actually be sourced/parsed
   local output
-  output=$(env -i bash -c "set -a; source \"$file\"; set +a" 2>&1) || {
+  output=$(env -i bash -c "set -a; source "$file"; set +a" 2>&1) || {
     echo ""
     echo "❌ Validation failed for: $file"
     echo "   The file cannot be parsed as an environment file."
