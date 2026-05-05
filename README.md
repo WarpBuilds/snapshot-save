@@ -9,8 +9,8 @@ Snapshots are temporary and will be deleted after 15 days.
 
 ## Prerequisites
 
-- **Supported Platforms:** Snapshot Runners are supported only on WarpBuild's managed (stock) Ubuntu runners.
-- **Unsupported Platforms:** BYOC runners, custom cloud runners, container-based runner images, Windows runners, and macOS runners are not supported.
+- **Supported Platforms:** Snapshot Runners are supported only on WarpBuild Cloud Ubuntu runners.
+- **Unsupported Platforms:** BYOC runners, Windows runners, and macOS runners are not supported.
 
 If you include snapshot labels (`snapshot.enabled=true` or `snapshot.key=<alias>`) on an unsupported runner type, the labels will be silently ignored and the job will run normally without snapshot functionality.
 
@@ -167,7 +167,7 @@ sensitive data before creating a snapshot.
 
 ## Additional Notes
 
-- Snapshot runners are only supported on WarpBuild's managed (stock) Ubuntu runners. Snapshot labels on any other runner type are silently ignored.
+- Snapshot runners are only supported on WarpBuild Cloud Ubuntu runners. Snapshot labels on any other runner type are silently ignored.
 - Boot times for snapshot runners can be slower than the default runners and take 45-60s.
 
 ## Author
