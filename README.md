@@ -22,8 +22,8 @@ If you include snapshot labels (`snapshot.enabled=true` or `snapshot.key=<alias>
 
 Enable snapshots for your runner by adding `snapshot.enabled=true` or `snapshot.key=<alias>` to the `runs-on` label in your workflow.
 
-- `snapshot.enabled=true` — Enables the snapshot feature on the runner. The runner always boots from the base image. Use `snapshot-save` action to capture a snapshot at the desired point in your workflow.
-- `snapshot.key=<alias>` — Enables the snapshot feature and boots from an existing snapshot if one is available for the given alias. If no snapshot exists yet, the runner boots from the base image.
+- `snapshot.enabled=true` -- Enables the snapshot feature on the runner. The runner always boots from the base image. Use `snapshot-save` action to capture a snapshot at the desired point in your workflow.
+- `snapshot.key=<alias>` -- Enables the snapshot feature and boots from an existing snapshot if one is available for the given alias. If no snapshot exists yet, the runner boots from the base image.
 
 If the runner machine is made from a snapshot, it will have an environment
 variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
