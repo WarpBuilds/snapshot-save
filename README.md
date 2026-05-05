@@ -5,36 +5,25 @@
 WarpSnapshot enables you to capture snapshots of your runner VMs at any point in
 your workflow, allowing you to reuse them for faster consecutive runs.
 
+Snapshots are temporary and will be deleted after 15 days.
+
 ## Prerequisites
 
-- Supported Platforms: WarpBuild Linux x64 and arm runners.
-- Unsupported Platforms: BYOC based runners, container image based runners and
-  Mac runners are not supported.
+- **Supported Platforms:** Snapshot Runners are supported only on WarpBuild Cloud Ubuntu runners.
+- **Unsupported Platforms:** BYOC runners, Windows runners, and macOS runners are not supported.
+
+If you include snapshot labels (`snapshot.enabled=true` or `snapshot.key=<alias>`) on an unsupported runner type, the labels will be silently ignored and the job will run normally without snapshot functionality.
+
+## Limitations
+
+- **/tmp** directory will not persist state since this directory is cleaned on reboots.
 
 ## Usage
 
-To incorporate WarpSnapshot into your workflow, add the following step to your
-.github/workflows/{workflow_name}.yml file, ideally at the end of the job:
+Enable snapshots for your runner by adding `snapshot.enabled=true` or `snapshot.key=<alias>` to the `runs-on` label in your workflow.
 
-```yaml
-jobs:
-  build:
-    runs-on: warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-      # Rest of your build steps
-      - name: Create snapshot
-        uses: WarpBuilds/snapshot-save@v1
-        with:
-          alias: 'unique-snapshot-alias'
-          fail-on-error: true
-          wait-timeout-minutes: 60
-```
-
-Invoking the action creates the snapshot of the runner. To use the snapshot in
-subsequent runs, specify the snapshot alias in the `runs-on` field of the job as
-shown above.
+- `snapshot.enabled=true` -- Enables the snapshot feature on the runner. The runner always boots from the base image. Use `snapshot-save` action to capture a snapshot at the desired point in your workflow.
+- `snapshot.key=<alias>` -- Enables the snapshot feature and boots from an existing snapshot if one is available for the given alias. If no snapshot exists yet, the runner boots from the base image.
 
 If the runner machine is made from a snapshot, it will have an environment
 variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
@@ -50,154 +39,115 @@ variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
 - **wait-timeout-minutes** (Optional): The maximum time (in minutes) to wait for
   the snapshot to be created. Default is `30` minutes.
 
-### Conditional snapshot usage
+### Example 1: Clean snapshot creation on main
 
-You can conditionally utilize snapshot runners by configuring the `runs-on`
-field in your workflow:
+On `main`, the runner uses `snapshot.enabled=true` to boot from the base image
+and creates a fresh snapshot via the `snapshot-save` action. On feature branches,
+it uses `snapshot.key` to boot from the existing snapshot for faster runs.
 
 ```yaml
 jobs:
   build:
-    runs-on:
-      ${{ contains(github.event.head_commit.message, '[warp-no-snapshot]') &&
-      'warp-ubuntu-latest-x64-2x' ||
-      'warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias' }}
+    runs-on: >-
+      ${{ github.ref == 'refs/heads/main'
+        && 'warp-ubuntu-latest-x64-2x;snapshot.enabled=true'
+        || 'warp-ubuntu-latest-x64-2x;snapshot.key=my-project-snapshot' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        # Add your build and test steps here
-      - name: Create snapshot
+
+      # Your build and test steps here
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # Cleanup and snapshot creation only on main
+      - name: Cleanup credentials
+        if: github.ref == 'refs/heads/main'
+        run: |
+          rm -rf $HOME/.ssh $HOME/.aws
+          git clean -ffdx
+
+      - name: Save snapshot
+        if: github.ref == 'refs/heads/main'
         uses: WarpBuilds/snapshot-save@v1
         with:
-          alias: 'unique-snapshot-alias'
-```
-
-The example above checks if the commit message contains `[warp-no-snapshot]`. If
-it does, the job runs on a standard runner. Otherwise, it runs on a snapshot
-runner with the specified alias.
-
-### Complex conditionals
-
-For more advanced scenarios, you can determine whether to use a standard or
-snapshot runner based on branch protection or other conditions:
-
-```yaml
-jobs:
-  determine-runner:
-    runs-on: ubuntu-latest
-    outputs:
-      runner: ${{ steps.set-runner.outputs.runner }}
-    steps:
-      - name: Determine Branch Protection
-        id: branch-protection
-        run: |
-          branch=$(echo "${{ github.ref }}" | sed 's|refs/heads/||')
-          echo "Branch: $branch"
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/branches/$branch/protection")
-          if [ $response -eq 200 ]; then
-            echo "Branch is protected"
-            echo "runner=warp-ubuntu-latest-x64-8x;snapshot.key=unique-snapshot-alias" >> $GITHUB_OUTPUT
-          else
-            echo "Branch is not protected"
-            echo "runner=warp-ubuntu-latest-x64-8x" >> $GITHUB_OUTPUT
-          fi
-  build:
-    needs: determine-runner
-    runs-on: ${{ needs.determine-runner.outputs.runner }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        # Add your build and test steps here
-      - name: Create snapshot
-        uses: WarpBuilds/snapshot-save@v1
-        with:
-          alias: 'unique-snapshot-alias'
-```
-
-### Cleanup script
-
-It’s strongly recommended to add a cleanup step to remove credentials and
-sensitive information before creating a snapshot. This can be achieved by adding
-a cleanup script before the snapshot step:
-
-```yaml
-jobs:
-  build:
-    runs-on: warp-ubuntu-latest-x64-2x;snapshot.key=unique-snapshot-alias
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        # Add your build and test steps here
-      - name: Cleanup VM
-        run: |
-          rm -rf $HOME/.ssh
-          rm -rf $HOME/.aws
-      - name: Create snapshot
-        uses: WarpBuilds/snsapshot-save@v1
-        with:
-          alias: 'unique-snapshot-alias'
+          alias: "my-project-snapshot"
           fail-on-error: true
           wait-timeout-minutes: 60
 ```
 
-## Use with Container Images
+### Example 2: Incremental snapshots on feature branches
 
-When using container images, the presave script may encounter errors. In such
-cases, you should set `skip-presave: true` and manually flush the file system
-before creating the snapshot.
-
-### Creating a Snapshot with Containers
+This workflow creates and updates snapshots on every push, so each run builds on
+the previous one. Useful when you want each feature branch run to incrementally
+cache build artifacts and dependencies.
 
 ```yaml
 jobs:
-  create-snapshot:
-    runs-on: warp-ubuntu-2404-x64-16x
-    container:
-      image: node:20-bookworm
-      volumes:
-        # the root disk for containers are
-        # ephemeral. Use a /savepoint on
-        # host and mount it for saving changes
-        - /savepoint:/workspace
+  build:
+    runs-on: warp-ubuntu-latest-x64-2x;snapshot.key=my-project-snapshot
     steps:
-      - name: Make changes to persist
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # Your build and test steps here
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # Cleanup credentials before snapshotting
+      - name: Cleanup credentials
         run: |
-          cd /workspace
-          echo 'this file should now exist' > test.txt
-        shell: bash
+          rm -rf $HOME/.ssh $HOME/.aws
+          git clean -ffdx
 
-      - name: Flush file system buffers
-        run: sync
-
-      - name: Create snapshot
+      - name: Save snapshot
         uses: WarpBuilds/snapshot-save@v1
         with:
-          alias: 'container-snapshot'
+          alias: "my-project-snapshot"
           fail-on-error: true
           wait-timeout-minutes: 60
-          skip-presave: true
 ```
 
-### Using the Snapshot
+On the first run, no snapshot exists for the alias yet, so the runner boots from
+the base image. The `snapshot-save` action creates a snapshot at the end.
+Subsequent runs boot from the latest snapshot, incrementally building on the
+previous state.
 
-```yaml
-jobs:
-  use-snapshot:
-    runs-on: warp-ubuntu-2404-x64-16x;snapshot.key=container-snapshot
-    container:
-      image: node:20-bookworm
-      volumes:
-        - /savepoint:/workspace
-    steps:
-      - name: Verify snapshot data
-        run: |
-          cd /workspace
-          cat test.txt
-        shell: bash
+### Cleanup
+
+It's strongly recommended to add a cleanup step to remove credentials and
+sensitive information before creating a snapshot.
+
+**Common cleanup commands:**
+
+```bash
+rm -rf $HOME/.ssh $HOME/.aws
+git clean -ffdx
 ```
+
+**Remove untracked files and directories:**
+
+It might be useful to remove some secret files that were added during the job,
+before making a snapshot.
+
+- _git clean_: removes untracked files from the local git repo.
+- _-f (force)_: forces the removal of files and directories.
+- _-f (force again)_: if `git config clean.requireForce true` is present, some files
+  may not be removed without this flag.
+- _-d (directories)_: removes directories not just files.
+- _-x (ignore .gitignore)_: removes files and directories that are ignored by git.
 
 ## Security
 
@@ -215,14 +165,10 @@ organization. This could lead to exposure of sensitive information to other
 users in the organization. It is recommended to use the cleanup script to remove
 sensitive data before creating a snapshot.
 
-## Benchmarks
+## Additional Notes
 
-## Additional Resources
-
-### BYOC (Bring Your Own Cloud)
-
-Visit [WarpBuild Docs](https://docs.warpbuild.com/snapshot-runners/byoc) to
-learn more about how you can use your BYOC runners with WarpSnapshot.
+- Snapshot runners are only supported on WarpBuild Cloud Ubuntu runners. Snapshot labels on any other runner type are silently ignored.
+- Boot times for snapshot runners can be slower than the default runners and take 45-60s.
 
 ## Author
 
@@ -231,7 +177,3 @@ This action was created by [WarpBuild](https://warpbuild.com).
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## Addtional Notes
-
-BYOC based snapshot runners will be launched soon.
