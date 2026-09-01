@@ -6538,13 +6538,7 @@ function processHeader (request, key, val) {
       } else if (typeof val[i] === 'object') {
         throw new InvalidArgumentError(`invalid ${key} header`)
       } else {
-        // Coerce primitives (and reject unsafe coercions such as functions
-        // with a crafted toString/Symbol.toPrimitive).
-        const str = `${val[i]}`
-        if (!isValidHeaderValue(str)) {
-          throw new InvalidArgumentError(`invalid ${key} header`)
-        }
-        arr.push(str)
+        arr.push(`${val[i]}`)
       }
     }
     val = arr
@@ -6555,12 +6549,7 @@ function processHeader (request, key, val) {
   } else if (val === null) {
     val = ''
   } else {
-    // Coerce primitives (and reject unsafe coercions such as functions
-    // with a crafted toString/Symbol.toPrimitive).
     val = `${val}`
-    if (!isValidHeaderValue(val)) {
-      throw new InvalidArgumentError(`invalid ${key} header`)
-    }
   }
 
   if (headerName === 'host') {
@@ -7937,7 +7926,6 @@ const {
   RequestContentLengthMismatchError,
   ResponseContentLengthMismatchError,
   RequestAbortedError,
-  InvalidArgumentError,
   HeadersTimeoutError,
   HeadersOverflowError,
   SocketError,
@@ -8803,7 +8791,7 @@ async function connectH1 (client, socket) {
 
 function clearIdleSocketValidation (socket) {
   if (socket[kIdleSocketValidationTimeout]) {
-    clearImmediate(socket[kIdleSocketValidationTimeout])
+    clearTimeout(socket[kIdleSocketValidationTimeout])
     socket[kIdleSocketValidationTimeout] = null
   }
 
@@ -8812,23 +8800,15 @@ function clearIdleSocketValidation (socket) {
 
 function scheduleIdleSocketValidation (client, socket) {
   socket[kIdleSocketValidation] = 1
-  // Yield to the check phase (after poll) so unsolicited bytes / FIN / RST
-  // already pending on this idle keep-alive socket are processed before the
-  // next request is written (GHSA-35p6-xmwp-9g52).
-  //
-  // setTimeout(0) pays Node's ~1ms timer floor on every sequential reuse
-  // (#5493). setImmediate avoids that, but an *unref'd* Immediate lets poll
-  // block for ~500ms when the event loop is otherwise idle (#5600 / #5606).
-  // A ref'd Immediate both keeps the pending request alive and makes poll
-  // return immediately — the hybrid those issues asked for.
-  socket[kIdleSocketValidationTimeout] = setImmediate(() => {
+  socket[kIdleSocketValidationTimeout] = setTimeout(() => {
     socket[kIdleSocketValidationTimeout] = null
     socket[kIdleSocketValidation] = 2
 
     if (client[kSocket] === socket && !socket.destroyed) {
       client[kResume]()
     }
-  })
+  }, 0)
+  socket[kIdleSocketValidationTimeout].unref?.()
 }
 
 /**
@@ -8929,16 +8909,8 @@ function writeH1 (client, request) {
     }
     body = bodyStream.stream
     contentLength = bodyStream.length
-  } else if (util.isBlobLike(body) && request.contentType == null) {
-    const contentType = body.type
-    if (contentType) {
-      const contentTypeValue = `${contentType}`
-      if (!util.isValidHeaderValue(contentTypeValue)) {
-        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'))
-        return false
-      }
-      headers.push('content-type', contentTypeValue)
-    }
+  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
+    headers.push('content-type', body.type)
   }
 
   if (body && typeof body.read === 'function') {
@@ -12425,28 +12397,6 @@ function calculateRetryAfterHeader (retryAfter) {
   return new Date(retryAfter).getTime() - current
 }
 
-function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
-  const contentLength = headers['content-length']
-  if (contentLength == null) {
-    return null
-  }
-
-  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
-    return null
-  }
-
-  const length = Number(contentLength)
-  const expectedLength = range.end - range.start + 1
-  if (!Number.isFinite(length) || length !== expectedLength) {
-    return new RequestRetryError('Content-Length mismatch', statusCode, {
-      headers,
-      data: { count: retryCount }
-    })
-  }
-
-  return null
-}
-
 class RetryHandler {
   constructor (opts, handlers) {
     const { retryOptions, ...dispatchOpts } = opts
@@ -12500,7 +12450,6 @@ class RetryHandler {
     this.end = null
     this.etag = null
     this.resume = null
-    this.headersSent = false
 
     // Handle possible onConnect duplication
     this.handler.onConnect(reason => {
@@ -12511,20 +12460,6 @@ class RetryHandler {
         this.reason = reason
       }
     })
-  }
-
-  checkpointResponseEnd (headers, resume) {
-    if (this.end == null && this.opts.method !== 'HEAD') {
-      const contentLength = headers['content-length']
-      this.end = contentLength != null ? Number(contentLength) - 1 : null
-
-      assert(
-        this.end == null || Number.isFinite(this.end),
-        'invalid content-length'
-      )
-    }
-
-    this.resume = this.end != null ? resume : null
   }
 
   onRequestSent () {
@@ -12616,8 +12551,6 @@ class RetryHandler {
 
     if (statusCode >= 300) {
       if (this.retryOpts.statusCodes.includes(statusCode) === false) {
-        this.headersSent = true
-        this.checkpointResponseEnd(headers, resume)
         return this.handler.onHeaders(
           statusCode,
           rawHeaders,
@@ -12678,23 +12611,10 @@ class RetryHandler {
         return false
       }
 
-      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount)
-      if (contentLengthError != null) {
-        this.abort(contentLengthError)
-        return false
-      }
-
       const { start, size, end = size - 1 } = contentRange
 
-      if (this.start !== start || (this.end != null && this.end !== end)) {
-        this.abort(
-          new RequestRetryError('Content-Range mismatch', statusCode, {
-            headers,
-            data: { count: this.retryCount }
-          })
-        )
-        return false
-      }
+      assert(this.start === start, 'content-range mismatch')
+      assert(this.end == null || this.end === end, 'content-range mismatch')
 
       this.resume = resume
       return true
@@ -12706,19 +12626,12 @@ class RetryHandler {
         const range = parseRangeHeader(headers['content-range'])
 
         if (range == null) {
-          this.headersSent = true
           return this.handler.onHeaders(
             statusCode,
             rawHeaders,
             resume,
             statusMessage
           )
-        }
-
-        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount)
-        if (contentLengthError != null) {
-          this.abort(contentLengthError)
-          return false
         }
 
         const { start, size, end = size - 1 } = range
@@ -12745,7 +12658,6 @@ class RetryHandler {
       )
 
       this.resume = resume
-      this.headersSent = true
       this.etag = headers.etag != null ? headers.etag : null
 
       // Weak etags are not useful for comparison nor cache
@@ -12785,7 +12697,7 @@ class RetryHandler {
   }
 
   onError (err) {
-    if (this.aborted || isDisturbed(this.opts.body) || (this.headersSent && this.resume == null)) {
+    if (this.aborted || isDisturbed(this.opts.body)) {
       return this.handler.onError(err)
     }
 
@@ -16993,7 +16905,7 @@ function validateCookiePath (path) {
 
     if (
       code < 0x20 || // exclude CTLs (0-31)
-      code > 0x7E || // exclude DEL and non-ascii
+      code === 0x7F || // DEL
       code === 0x3B // ;
     ) {
       throw new Error('Invalid cookie path')
@@ -17002,80 +16914,16 @@ function validateCookiePath (path) {
 }
 
 /**
- * <let-dig> ::= <letter> | <digit>
- *
- * <letter> ::= any one of the 52 alphabetic characters A through Z in
- * upper case and a through z in lower case
- *
- * <digit> ::= any one of the ten digits 0 through 9r
- *
- * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
- * @param {number} code
- */
-function isLetterOrDigit (code) {
-  return (
-    (code >= 0x30 && code <= 0x39) || // 0-9
-    (code >= 0x41 && code <= 0x5A) || // A-Z
-    (code >= 0x61 && code <= 0x7A) // a-z
-  )
-}
-
-/**
- * Validates a cookie domain against the "preferred name syntax".
- *
- * <domain>      ::= <subdomain> | " "
- * <subdomain>   ::= <label> | <subdomain> "." <label>
- * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
- * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
- * <let-dig-hyp> ::= <let-dig> | "-"
- *
- * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
- * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
- * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
+ * I have no idea why these values aren't allowed to be honest,
+ * but Deno tests these. - Khafra
  * @param {string} domain
  */
 function validateCookieDomain (domain) {
-  // <domain> ::= <subdomain> | " "
-  if (domain === ' ') {
-    return
-  }
-
-  if (domain.length > 255) {
-    throw new Error('Invalid cookie domain')
-  }
-
-  let labelLength = 0
-
-  for (let i = 0; i < domain.length; ++i) {
-    const code = domain.charCodeAt(i)
-
-    if (code === 0x2E) {
-      if (labelLength === 0) {
-        throw new Error('Invalid cookie domain')
-      }
-
-      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
-        throw new Error('Invalid cookie domain')
-      }
-
-      labelLength = 0
-      continue
-    }
-
-    if (labelLength === 0 && !isLetterOrDigit(code)) {
-      throw new Error('Invalid cookie domain')
-    }
-
-    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
-      throw new Error('Invalid cookie domain')
-    }
-
-    if (++labelLength > 63) {
-      throw new Error('Invalid cookie domain')
-    }
-  }
-
-  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
+  if (
+    domain.startsWith('-') ||
+    domain.endsWith('.') ||
+    domain.endsWith('-')
+  ) {
     throw new Error('Invalid cookie domain')
   }
 }
@@ -17218,13 +17066,7 @@ function stringify (cookie) {
 
     const [key, ...value] = part.split('=')
 
-    const trimmedKey = key.trim()
-    const joinedValue = value.join('=')
-
-    validateCookieName(trimmedKey)
-    validateCookieValue(joinedValue)
-
-    out.push(`${trimmedKey}=${joinedValue}`)
+    out.push(`${key.trim()}=${value.join('=')}`)
   }
 
   return out.join('; ')
@@ -17271,49 +17113,6 @@ const COLON = 0x3A
  */
 const SPACE = 0x20
 
-const DATA = Buffer.from('data')
-const EVENT = Buffer.from('event')
-const ID = Buffer.from('id')
-const RETRY = Buffer.from('retry')
-
-function isASCIINumberBytes (buffer, start) {
-  if (start >= buffer.length) {
-    return false
-  }
-
-  for (let i = start; i < buffer.length; i++) {
-    if (buffer[i] < 0x30 || buffer[i] > 0x39) {
-      return false
-    }
-  }
-
-  return true
-}
-
-function isValidLastEventIdBytes (buffer, start) {
-  for (let i = start; i < buffer.length; i++) {
-    if (buffer[i] === 0x00) {
-      return false
-    }
-  }
-
-  return true
-}
-
-function isFieldName (line, length, field) {
-  if (length !== field.length) {
-    return false
-  }
-
-  for (let i = 0; i < length; i++) {
-    if (line[i] !== field[i]) {
-      return false
-    }
-  }
-
-  return true
-}
-
 /**
  * @typedef {object} EventSourceStreamEvent
  * @type {object}
@@ -17354,14 +17153,11 @@ class EventSourceStream extends Transform {
   eventEndCheck = false
 
   /**
-   * @type {Buffer[]}
+   * @type {Buffer}
    */
-  chunks = []
+  buffer = null
 
-  chunkIndex = 0
   pos = 0
-  lineChunkIndex = 0
-  linePos = 0
 
   event = {
     data: undefined,
@@ -17400,20 +17196,92 @@ class EventSourceStream extends Transform {
       return
     }
 
-    this.chunks.push(chunk)
+    // Cache the chunk in the buffer, as the data might not be complete while
+    // processing it
+    // TODO: Investigate if there is a more performant way to handle
+    // incoming chunks
+    // see: https://github.com/nodejs/undici/issues/2630
+    if (this.buffer) {
+      this.buffer = Buffer.concat([this.buffer, chunk])
+    } else {
+      this.buffer = chunk
+    }
 
     // Strip leading byte-order-mark if we opened the stream and started
     // the processing of the incoming data
     if (this.checkBOM) {
-      if (this.handleBOM()) {
-        callback()
-        return
+      switch (this.buffer.length) {
+        case 1:
+          // Check if the first byte is the same as the first byte of the BOM
+          if (this.buffer[0] === BOM[0]) {
+            // If it is, we need to wait for more data
+            callback()
+            return
+          }
+          // Set the checkBOM flag to false as we don't need to check for the
+          // BOM anymore
+          this.checkBOM = false
+
+          // The buffer only contains one byte so we need to wait for more data
+          callback()
+          return
+        case 2:
+          // Check if the first two bytes are the same as the first two bytes
+          // of the BOM
+          if (
+            this.buffer[0] === BOM[0] &&
+            this.buffer[1] === BOM[1]
+          ) {
+            // If it is, we need to wait for more data, because the third byte
+            // is needed to determine if it is the BOM or not
+            callback()
+            return
+          }
+
+          // Set the checkBOM flag to false as we don't need to check for the
+          // BOM anymore
+          this.checkBOM = false
+          break
+        case 3:
+          // Check if the first three bytes are the same as the first three
+          // bytes of the BOM
+          if (
+            this.buffer[0] === BOM[0] &&
+            this.buffer[1] === BOM[1] &&
+            this.buffer[2] === BOM[2]
+          ) {
+            // If it is, we can drop the buffered data, as it is only the BOM
+            this.buffer = Buffer.alloc(0)
+            // Set the checkBOM flag to false as we don't need to check for the
+            // BOM anymore
+            this.checkBOM = false
+
+            // Await more data
+            callback()
+            return
+          }
+          // If it is not the BOM, we can start processing the data
+          this.checkBOM = false
+          break
+        default:
+          // The buffer is longer than 3 bytes, so we can drop the BOM if it is
+          // present
+          if (
+            this.buffer[0] === BOM[0] &&
+            this.buffer[1] === BOM[1] &&
+            this.buffer[2] === BOM[2]
+          ) {
+            // Remove the BOM from the buffer
+            this.buffer = this.buffer.subarray(3)
+          }
+
+          // Set the checkBOM flag to false as we don't need to check for the
+          this.checkBOM = false
+          break
       }
     }
 
-    while (this.hasCurrentByte()) {
-      const byte = this.currentByte()
-
+    while (this.pos < this.buffer.length) {
       // If the previous line ended with an end-of-line, we need to check
       // if the next character is also an end-of-line.
       if (this.eventEndCheck) {
@@ -17426,9 +17294,10 @@ class EventSourceStream extends Transform {
         if (this.crlfCheck) {
           // If the current character is a line feed, we can remove it
           // from the buffer and reset the crlfCheck flag
-          if (byte === LF) {
+          if (this.buffer[this.pos] === LF) {
+            this.buffer = this.buffer.subarray(this.pos + 1)
+            this.pos = 0
             this.crlfCheck = false
-            this.consumeCurrentByte()
 
             // It is possible that the line feed is not the end of the
             // event. We need to check if the next character is an
@@ -17444,17 +17313,19 @@ class EventSourceStream extends Transform {
           this.crlfCheck = false
         }
 
-        if (byte === LF || byte === CR) {
+        if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
           // If the current character is a carriage return, we need to
           // set the crlfCheck flag to true, as we need to check if the
           // next character is a line feed so we can remove it from the
           // buffer
-          if (byte === CR) {
+          if (this.buffer[this.pos] === CR) {
             this.crlfCheck = true
           }
 
-          this.consumeCurrentByte()
-          if (this.hasPendingEvent()) {
+          this.buffer = this.buffer.subarray(this.pos + 1)
+          this.pos = 0
+          if (
+            this.event.data !== undefined || this.event.event || this.event.id || this.event.retry) {
             this.processEvent(this.event)
           }
           this.clearEvent()
@@ -17468,18 +17339,22 @@ class EventSourceStream extends Transform {
 
       // If the current character is an end-of-line, we can process the
       // line
-      if (byte === LF || byte === CR) {
+      if (this.buffer[this.pos] === LF || this.buffer[this.pos] === CR) {
         // If the current character is a carriage return, we need to
         // set the crlfCheck flag to true, as we need to check if the
         // next character is a line feed
-        if (byte === CR) {
+        if (this.buffer[this.pos] === CR) {
           this.crlfCheck = true
         }
 
         // In any case, we can process the line as we reached an
         // end-of-line character
-        this.parseLine(this.readLine(), this.event)
-        this.consumeCurrentByte()
+        this.parseLine(this.buffer.subarray(0, this.pos), this.event)
+
+        // Remove the processed line from the buffer
+        this.buffer = this.buffer.subarray(this.pos + 1)
+        // Reset the position as we removed the processed line from the buffer
+        this.pos = 0
         // A line was processed and this could be the end of the event. We need
         // to check if the next line is empty to determine if the event is
         // finished.
@@ -17487,7 +17362,7 @@ class EventSourceStream extends Transform {
         continue
       }
 
-      this.advanceCursor()
+      this.pos++
     }
 
     callback()
@@ -17512,53 +17387,64 @@ class EventSourceStream extends Transform {
       return
     }
 
-    let fieldLength = line.length
-    let valueStart = line.length
+    let field = ''
+    let value = ''
 
     // If the line contains a U+003A COLON character (:)
     if (colonPosition !== -1) {
-      fieldLength = colonPosition
+      // Collect the characters on the line before the first U+003A COLON
+      // character (:), and let field be that string.
+      // TODO: Investigate if there is a more performant way to extract the
+      // field
+      // see: https://github.com/nodejs/undici/issues/2630
+      field = line.subarray(0, colonPosition).toString('utf8')
 
       // Collect the characters on the line after the first U+003A COLON
       // character (:), and let value be that string.
       // If value starts with a U+0020 SPACE character, remove it from value.
-      valueStart = colonPosition + 1
+      let valueStart = colonPosition + 1
       if (line[valueStart] === SPACE) {
         ++valueStart
       }
+      // TODO: Investigate if there is a more performant way to extract the
+      // value
+      // see: https://github.com/nodejs/undici/issues/2630
+      value = line.subarray(valueStart).toString('utf8')
+
+      // Otherwise, the string is not empty but does not contain a U+003A COLON
+      // character (:)
+    } else {
+      // Process the field using the steps described below, using the whole
+      // line as the field name, and the empty string as the field value.
+      field = line.toString('utf8')
+      value = ''
     }
 
-    if (isFieldName(line, fieldLength, DATA)) {
-      const value = line.toString('utf8', valueStart)
-
-      if (event.data === undefined) {
-        event.data = value
-      } else {
-        event.data += `\n${value}`
-      }
-      return
-    }
-
-    if (isFieldName(line, fieldLength, RETRY)) {
-      if (isASCIINumberBytes(line, valueStart)) {
-        event.retry = line.toString('utf8', valueStart)
-      }
-      return
-    }
-
-    if (isFieldName(line, fieldLength, ID)) {
-      if (isValidLastEventIdBytes(line, valueStart)) {
-        event.id = line.toString('utf8', valueStart)
-      }
-      return
-    }
-
-    if (isFieldName(line, fieldLength, EVENT)) {
-      const value = line.toString('utf8', valueStart)
-
-      if (value.length > 0) {
-        event.event = value
-      }
+    // Modify the event with the field name and value. The value is also
+    // decoded as UTF-8
+    switch (field) {
+      case 'data':
+        if (event[field] === undefined) {
+          event[field] = value
+        } else {
+          event[field] += `\n${value}`
+        }
+        break
+      case 'retry':
+        if (isASCIINumber(value)) {
+          event[field] = value
+        }
+        break
+      case 'id':
+        if (isValidLastEventId(value)) {
+          event[field] = value
+        }
+        break
+      case 'event':
+        if (value.length > 0) {
+          event[field] = value
+        }
+        break
     }
   }
 
@@ -17588,151 +17474,12 @@ class EventSourceStream extends Transform {
   }
 
   clearEvent () {
-    this.event.data = undefined
-    this.event.event = undefined
-    this.event.id = undefined
-    this.event.retry = undefined
-  }
-
-  hasPendingEvent () {
-    return this.event.data !== undefined ||
-      this.event.event !== undefined ||
-      this.event.id !== undefined ||
-      this.event.retry !== undefined
-  }
-
-  hasCurrentByte () {
-    return this.chunkIndex < this.chunks.length &&
-      this.pos < this.chunks[this.chunkIndex].length
-  }
-
-  currentByte () {
-    return this.chunks[this.chunkIndex][this.pos]
-  }
-
-  consumeCurrentByte () {
-    this.advanceCursor()
-    this.syncLineStartToCursor()
-  }
-
-  advanceCursor () {
-    this.pos++
-
-    while (this.chunkIndex < this.chunks.length && this.pos >= this.chunks[this.chunkIndex].length) {
-      this.chunkIndex++
-      this.pos = 0
+    this.event = {
+      data: undefined,
+      event: undefined,
+      id: undefined,
+      retry: undefined
     }
-  }
-
-  syncLineStartToCursor () {
-    this.lineChunkIndex = this.chunkIndex
-    this.linePos = this.pos
-    this.dropConsumedChunks()
-  }
-
-  dropConsumedChunks () {
-    while (this.lineChunkIndex > 0) {
-      this.chunks.shift()
-      this.lineChunkIndex--
-      this.chunkIndex--
-    }
-
-    if (this.chunkIndex === this.chunks.length) {
-      this.chunks.length = 0
-      this.chunkIndex = 0
-      this.pos = 0
-      this.lineChunkIndex = 0
-      this.linePos = 0
-    }
-  }
-
-  readLine () {
-    if (this.lineChunkIndex === this.chunkIndex) {
-      return this.chunks[this.chunkIndex].subarray(this.linePos, this.pos)
-    }
-
-    const chunks = []
-    let length = 0
-
-    for (let i = this.lineChunkIndex; i <= this.chunkIndex; i++) {
-      const chunk = this.chunks[i]
-      const start = i === this.lineChunkIndex ? this.linePos : 0
-      const end = i === this.chunkIndex ? this.pos : chunk.length
-      const slice = chunk.subarray(start, end)
-      length += slice.length
-      chunks.push(slice)
-    }
-
-    return Buffer.concat(chunks, length)
-  }
-
-  peekBufferedByte (offset) {
-    let chunkIndex = this.lineChunkIndex
-    let pos = this.linePos
-
-    while (chunkIndex < this.chunks.length) {
-      const chunk = this.chunks[chunkIndex]
-      const remaining = chunk.length - pos
-
-      if (offset < remaining) {
-        return chunk[pos + offset]
-      }
-
-      offset -= remaining
-      chunkIndex++
-      pos = 0
-    }
-  }
-
-  discardLeadingBytes (count) {
-    while (count > 0 && this.lineChunkIndex < this.chunks.length) {
-      const chunk = this.chunks[this.lineChunkIndex]
-      const remaining = chunk.length - this.linePos
-
-      if (count < remaining) {
-        this.linePos += count
-        count = 0
-      } else {
-        count -= remaining
-        this.lineChunkIndex++
-        this.linePos = 0
-      }
-    }
-
-    this.chunkIndex = this.lineChunkIndex
-    this.pos = this.linePos
-    this.dropConsumedChunks()
-  }
-
-  handleBOM () {
-    const first = this.peekBufferedByte(0)
-    const second = this.peekBufferedByte(1)
-    const third = this.peekBufferedByte(2)
-
-    if (second === undefined) {
-      if (first === BOM[0]) {
-        return true
-      }
-
-      this.checkBOM = false
-      return true
-    }
-
-    if (third === undefined) {
-      if (first === BOM[0] && second === BOM[1]) {
-        return true
-      }
-
-      this.checkBOM = false
-      return false
-    }
-
-    if (first === BOM[0] && second === BOM[1] && third === BOM[2]) {
-      this.discardLeadingBytes(3)
-    }
-
-    this.checkBOM = false
-    return !this.hasCurrentByte()
   }
 }
 
@@ -29024,7 +28771,7 @@ function establishWebSocketConnection (url, protocols, client, ws, onEstablish, 
         // is specified, the server needs to include the same field and one of
         // the selected subprotocol values in its response for the connection to
         // be established.
-        if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
+        if (!requestProtocols.includes(secProtocol)) {
           failWebsocketConnection(ws, 'Protocol was not set in the opening handshake.')
           return
         }
@@ -29789,12 +29536,7 @@ class PerMessageDeflate {
 
         if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
           callback(new MessageSizeExceededError())
-          // The inflater may still hold buffered input that can emit a late
-          // zlib error. Remove the data listener, then deterministically stop
-          // the stream so a subsequent 'error' cannot fire without a listener
-          // (which would terminate the process as an unhandled error event).
           this.#inflate.removeAllListeners()
-          this.#inflate.destroy()
           this.#inflate = null
           return
         }
@@ -31894,14 +31636,20 @@ echo "Presave complete"
         let nextVersionID = 0;
         this.logger.debug('Found the following runner images:');
         this.logger.debug(JSON.stringify(images, null, 2));
-        if ((images.runner_images?.length ?? 0) > 0) {
+        // The list endpoint can return aliases that merely contain the requested
+        // one (e.g. querying 'my-image' also matches 'my-image-arm64'), and the
+        // order of those results is not guaranteed. Pick the exact match rather
+        // than trusting the first element — otherwise which alias "wins" varies
+        // from run to run, and we can update the wrong image or fail with a
+        // spurious arch/os mismatch.
+        const existingImage = images.runner_images?.find(image => image.alias === opts.runnerImageAlias);
+        if (existingImage) {
             this.logger.info(`Snapshot alias '${opts.runnerImageAlias}' already exists`);
             this.logger.info(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new snapshot`);
-            runnerImageID = images.runner_images?.[0].id || '';
-            const existingArch = images.runner_images?.[0].arch;
-            const existingOs = images.runner_images?.[0].os;
-            versionID =
-                images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0;
+            runnerImageID = existingImage.id || '';
+            const existingArch = existingImage.arch;
+            const existingOs = existingImage.os;
+            versionID = existingImage.warpbuild_snapshot_image?.version_id ?? 0;
             nextVersionID = versionID + 1;
             if (existingArch !== currArch) {
                 throw new Error(`Updating existing snapshot alias '${opts.runnerImageAlias}' to new arch '${currArch}' from '${existingArch}' isn't supported'`);
