@@ -246,7 +246,18 @@ echo "Presave complete"
     let nextVersionID = 0
     this.logger.debug('Found the following runner images:')
     this.logger.debug(JSON.stringify(images, null, 2))
-    if ((images.runner_images?.length ?? 0) > 0) {
+
+    // The list endpoint can return aliases that merely contain the requested
+    // one (e.g. querying 'my-image' also matches 'my-image-arm64'), and the
+    // order of those results is not guaranteed. Pick the exact match rather
+    // than trusting the first element — otherwise which alias "wins" varies
+    // from run to run, and we can update the wrong image or fail with a
+    // spurious arch/os mismatch.
+    const existingImage = images.runner_images?.find(
+      image => image.alias === opts.runnerImageAlias
+    )
+
+    if (existingImage) {
       this.logger.info(
         `Snapshot alias '${opts.runnerImageAlias}' already exists`
       )
@@ -255,11 +266,10 @@ echo "Presave complete"
           opts.runnerImageAlias
         }' to new snapshot`
       )
-      runnerImageID = images.runner_images?.[0].id || ''
-      const existingArch = images.runner_images?.[0].arch
-      const existingOs = images.runner_images?.[0].os
-      versionID =
-        images.runner_images?.[0].warpbuild_snapshot_image?.version_id ?? 0
+      runnerImageID = existingImage.id || ''
+      const existingArch = existingImage.arch
+      const existingOs = existingImage.os
+      versionID = existingImage.warpbuild_snapshot_image?.version_id ?? 0
       nextVersionID = versionID + 1
       if (existingArch !== currArch) {
         throw new Error(
