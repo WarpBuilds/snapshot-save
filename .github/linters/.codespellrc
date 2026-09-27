@@ -1,0 +1,5 @@
+[codespell]
+check-hidden =
+skip = */package-lock.json,*/go.mod,*/go.sum,*.log,.git
+# currOs is a variable name in src/snapshotter/snapshotter.ts, not a misspelling.
+ignore-words-list = curros

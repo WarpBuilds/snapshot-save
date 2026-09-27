@@ -9,21 +9,31 @@ Snapshots are temporary and will be deleted after 15 days.
 
 ## Prerequisites
 
-- **Supported Platforms:** Snapshot Runners are supported only on WarpBuild Cloud Ubuntu runners.
-- **Unsupported Platforms:** BYOC runners, Windows runners, and macOS runners are not supported.
+- **Supported Platforms:** Snapshot Runners are supported only on WarpBuild
+  Cloud Ubuntu runners.
+- **Unsupported Platforms:** BYOC runners, Windows runners, and macOS runners
+  are not supported.
 
-If you include snapshot labels (`snapshot.enabled=true` or `snapshot.key=<alias>`) on an unsupported runner type, the labels will be silently ignored and the job will run normally without snapshot functionality.
+If you include snapshot labels (`snapshot.enabled=true` or
+`snapshot.key=<alias>`) on an unsupported runner type, the labels will be
+silently ignored and the job will run normally without snapshot functionality.
 
 ## Limitations
 
-- **/tmp** directory will not persist state since this directory is cleaned on reboots.
+- **/tmp** directory will not persist state since this directory is cleaned on
+  reboots.
 
 ## Usage
 
-Enable snapshots for your runner by adding `snapshot.enabled=true` or `snapshot.key=<alias>` to the `runs-on` label in your workflow.
+Enable snapshots for your runner by adding `snapshot.enabled=true` or
+`snapshot.key=<alias>` to the `runs-on` label in your workflow.
 
-- `snapshot.enabled=true` -- Enables the snapshot feature on the runner. The runner always boots from the base image. Use `snapshot-save` action to capture a snapshot at the desired point in your workflow.
-- `snapshot.key=<alias>` -- Enables the snapshot feature and boots from an existing snapshot if one is available for the given alias. If no snapshot exists yet, the runner boots from the base image.
+- `snapshot.enabled=true` -- Enables the snapshot feature on the runner. The
+  runner always boots from the base image. Use `snapshot-save` action to capture
+  a snapshot at the desired point in your workflow.
+- `snapshot.key=<alias>` -- Enables the snapshot feature and boots from an
+  existing snapshot if one is available for the given alias. If no snapshot
+  exists yet, the runner boots from the base image.
 
 If the runner machine is made from a snapshot, it will have an environment
 variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
@@ -42,8 +52,9 @@ variable `WARPBUILD_SNAPSHOT_KEY` set to the alias of the snapshot.
 ### Example 1: Clean snapshot creation on main
 
 On `main`, the runner uses `snapshot.enabled=true` to boot from the base image
-and creates a fresh snapshot via the `snapshot-save` action. On feature branches,
-it uses `snapshot.key` to boot from the existing snapshot for faster runs.
+and creates a fresh snapshot via the `snapshot-save` action. On feature
+branches, it uses `snapshot.key` to boot from the existing snapshot for faster
+runs.
 
 ```yaml
 jobs:
@@ -77,7 +88,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: WarpBuilds/snapshot-save@v1
         with:
-          alias: "my-project-snapshot"
+          alias: 'my-project-snapshot'
           fail-on-error: true
           wait-timeout-minutes: 60
 ```
@@ -115,7 +126,7 @@ jobs:
       - name: Save snapshot
         uses: WarpBuilds/snapshot-save@v1
         with:
-          alias: "my-project-snapshot"
+          alias: 'my-project-snapshot'
           fail-on-error: true
           wait-timeout-minutes: 60
 ```
@@ -142,12 +153,13 @@ git clean -ffdx
 It might be useful to remove some secret files that were added during the job,
 before making a snapshot.
 
-- _git clean_: removes untracked files from the local git repo.
+- `git clean`: removes untracked files from the local Git repository.
 - _-f (force)_: forces the removal of files and directories.
-- _-f (force again)_: if `git config clean.requireForce true` is present, some files
-  may not be removed without this flag.
+- _-f (force again)_: if `git config clean.requireForce true` is present, some
+  files may not be removed without this flag.
 - _-d (directories)_: removes directories not just files.
-- _-x (ignore .gitignore)_: removes files and directories that are ignored by git.
+- _-x (ignore .gitignore)_: removes files and directories that are ignored by
+  Git.
 
 ## Security
 
@@ -167,8 +179,10 @@ sensitive data before creating a snapshot.
 
 ## Additional Notes
 
-- Snapshot runners are only supported on WarpBuild Cloud Ubuntu runners. Snapshot labels on any other runner type are silently ignored.
-- Boot times for snapshot runners can be slower than the default runners and take 45-60s.
+- Snapshot runners are only supported on WarpBuild Cloud Ubuntu runners.
+  Snapshot labels on any other runner type are silently ignored.
+- Boot times for snapshot runners can be slower than the default runners and
+  take 45-60s.
 
 ## Author
 
