@@ -88,6 +88,7 @@
     "typescript": "^5.9.3"
   },
   "overrides": {
-    "undici": "^6.24.0"
+    "undici": "^6.24.0",
+    "handlebars": "^4.7.10"
   }
 }
