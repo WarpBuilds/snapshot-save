@@ -31739,11 +31739,8 @@ printenv | grep -v '^GITHUB_' | grep -v '^WARP_' | grep -v '^ACTIONS_' | grep -v
   [[ $line == *=* ]] || continue        # skip malformed lines (no '=')
   key=$(echo "$line" | cut -d= -f1)
   value=$(echo "$line" | cut -d= -f2-)
-  if grep -q "^\${key}=" /etc/environment; then
-    sudo sed -i "s|^\${key}=.*|\${key}=\${value}|" /etc/environment
-  else
-    printf '%s=%q\n' "$key" "$value" | sudo tee -a /etc/environment > /dev/null
-  fi
+  sudo sed -i "/^\${key}=/d" /etc/environment
+  printf '%s=%q\n' "$key" "$value" | sudo tee -a /etc/environment > /dev/null
 done
 
 # Remove PATH from /runner/.env
